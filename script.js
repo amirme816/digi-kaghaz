@@ -1,14 +1,15 @@
-// 🛑 کدهای فایربیس خودت را دقیقاً جایگزین مقادیر زیر کن 🛑
+// 🌐 اطلاعات اتصال اختصاصی فروشگاه دیجی کاغذ تو به گوگل فایربیس
 const firebaseConfig = {
-  apiKey: "AIzaSyYOUR-KEY-HERE", apiKey: "AIzaSyCLJ7grYpm2YWFeoO1BBDFg4dY77IE12So",
+  apiKey: "AIzaSyCLJ7grYpm2YWFeoO1BBDFg4dY77IE12So",
   authDomain: "digi-kaghaz.firebaseapp.com",
+  databaseURL: "https://digi-kaghaz-default-rtdb.firebaseio.com", // دیتابیس آنلاین تو
   projectId: "digi-kaghaz",
   storageBucket: "digi-kaghaz.firebasestorage.app",
   messagingSenderId: "201039194477",
   appId: "1:201039194477:web:05828118c02f824a515264"
 };
 
-// راه‌اندازی اولیه اتصال اینترنتی
+// راه‌اندازی و برقراری ارتباط زنده با سرور
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -17,7 +18,7 @@ const database = firebase.database();
 let selectedImageBase64 = "";
 let cart = []; 
 let currentDiscountPercent = 0;
-let globalProductsArray = []; // ذخیره محلی موقت محصولات آنلاین خریده شده
+let globalProductsArray = []; // آرایه نگهداری محصولات همگام‌سازی شده با کل دنیا
 
 const DEFAULT_PLACEHOLDER_IMAGE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'><rect width='100%25' height='100%25' fill='%23eee'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23aaa'>بدون تصویر</text></svg>";
 
@@ -37,16 +38,15 @@ function initThemeOnLoad() {
     updateCoinDisplay();
     renderCouponsMarket();
     renderOwnedCouponsList();
-    listenToLiveProducts(); // گوش دادن دائمی و ریل‌تایم به دیتابیس آنلاین گوگل
+    listenToLiveProducts(); // اتصال به سیستم گوش‌به‌زنگ فایربیس
 }
 
-// 🌐 سیستم گوش‌به‌زنگ فایربیس: به محض آپلود کالا توسط هر کس، صفحه همه خودکار آپدیت می‌شود
+// 📡 دریافت همزمان محصولات: هر کس در دنیا کالا اضافه یا کم کند، صفحه بقیه در جا آپدیت می‌شود
 function listenToLiveProducts() {
     database.ref('products').on('value', (snapshot) => {
         const data = snapshot.val();
         let productsList = [];
         if (data) {
-            // تبدیل دیتای فایربیس به آرایه استاندارد
             productsList = Object.keys(data).map(key => ({
                 id: key,
                 ...data[key]
@@ -90,7 +90,7 @@ function previewImage(event) {
     }
 }
 
-// 🚀 ذخیره آنلاین کالا در فایربیس به جای لوکال استوریج شخصی
+// 🚀 آپلود کالا روی دیتابیس ابری گوگل شما
 const productForm = document.getElementById('productForm');
 if (productForm) {
     productForm.addEventListener('submit', function(event) {
@@ -116,16 +116,15 @@ if (productForm) {
             title, price, stock, desc, isAmazing, discountPercent, endTime, image, comments: []
         };
         
-        // ارسال مستقیم کالا به ابر فایربیس گوگل
         database.ref('products').push(newProduct)
         .then(() => {
-            alert("🎉 کالا در سرور ابری منتشر شد و اکنون برای تمام خریداران قابل مشاهده است!");
+            alert("🎉 محصول با موفقیت روی سرورهای فایربیس آپلود شد و برای همه خریداران به نمایش درآمد!");
             productForm.reset();
             if(document.getElementById('amazingOptions')) document.getElementById('amazingOptions').style.display = 'none';
             document.getElementById('imgPreview').style.display = 'none';
             selectedImageBase64 = "";
         })
-        .catch(err => alert("خطا در اتصال اینترنت: " + err.message));
+        .catch(err => alert("خطا در اتصال به سرور ابری: " + err.message));
     });
 }
 
@@ -195,7 +194,6 @@ function restockProduct(prodId) {
     const amount = parseInt(inputEl.value) || 0;
     if(amount <= 0) return;
 
-    // به روز رسانی آنی انبار روی سرور گوگل
     const prod = globalProductsArray.find(p => p.id === prodId);
     if(prod) {
         const newStock = (prod.stock || 0) + amount;
@@ -214,7 +212,6 @@ function loadProductDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const prodId = urlParams.get('id');
 
-    // دریافت مستقیم کالا از دیتابیس ابری فایربیس
     database.ref('products/' + prodId).once('value', (snapshot) => {
         const prod = snapshot.val();
         if (!prod) { container.innerHTML = "<h2>❌ کالا یافت نشد!</h2>"; return; }
@@ -224,9 +221,9 @@ function loadProductDetails() {
         if (stockValue === 0) {
             notifyHTML = `
                 <div class="shipping-progress-container" style="border: 1px dashed #ff9900; padding:10px; background:rgba(255,153,0,0.05); margin: 15px 0;">
-                    📢 <strong>شارژ سریع انبار آنلاین:</strong>
+                    📢 <strong>شارژ انبار آنلاین:</strong>
                     <div style="display:flex; gap:5px; margin-top:5px;">
-                        <input type="number" id="detailRestockInput" placeholder="چند کالا موجود شد؟" style="padding:5px;">
+                        <input type="number" id="detailRestockInput" placeholder="تعداد شارژ" style="padding:5px;">
                         <button onclick="restockFromDetails('${prodId}')" style="background:#2ecc71; border:none; color:white; padding:5px; border-radius:6px; cursor:pointer;">ثبت آنلاین</button>
                     </div>
                 </div>
@@ -282,7 +279,6 @@ function addAdvancedComment(prodId) {
     if(!name || !text) return;
 
     const newComment = { user: name, text: text, avatar: "🤖" };
-    // ارسال کامنت مستقیم به پوشه همان محصول در گوگل فایربیس
     database.ref('products/' + prodId + '/comments').push(newComment, () => {
         loadProductDetails();
     });
@@ -328,7 +324,6 @@ function calculateEarnedCoins(itemCount) {
 function checkoutAndEarnCoins() {
     if (cart.length === 0) return;
 
-    // کسر آنلاین موجودی محصولات خریده شده از دیتابیس ابری گوگل
     cart.forEach(cartItem => {
         database.ref('products/' + cartItem.id).once('value', snapshot => {
             const currentStock = snapshot.val().stock || 0;
