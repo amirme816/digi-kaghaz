@@ -3,72 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دیجی کاغذ - پنل بارگذاری کالا</title>
+    <title>دیجی کاغذ - پنل بارگذاری آنلاین کالا</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-
     <div class="top-bar">
-        <div class="logo">🛠️ پنل مدیریت دیجی کاغذ</div>
-        <a href="index.html" class="nav-link">🏪 ورود به ویترین مغازه ←</a>
+        <div class="logo">🛠️ پنل مدیریت سراسری</div>
+        <a href="index.html" class="nav-link">🏪 ورود به ویترین ←</a>
     </div>
-
     <div class="main-container">
-        <h1>📦 بارگذاری کالای جدید</h1>
-        <p class="subtitle">محصول خود را به همراه تعداد انبار به فروشگاه اضافه کنید</p>
-
+        <h1>📦 بارگذاری کالای جدید در سرور ابری</h1>
         <form id="productForm">
-            <div class="form-group">
-                <label for="prodTitle">نام کالا:</label>
-                <input type="text" id="prodTitle" placeholder="مثلاً: دفترچه نئونی سایبرپانک" required>
-            </div>
-
-            <div class="form-group">
-                <label for="prodPrice">قیمت اصلی (تومان):</label>
-                <input type="number" id="prodPrice" placeholder="مثلاً: 100000" required>
-            </div>
-
-            <div class="form-group">
-                <label for="prodStock">📦 موجودی اولیه انبار:</label>
-                <input type="number" id="prodStock" min="0" placeholder="مثلاً: 5" required>
-            </div>
-
+            <div class="form-group"><label for="prodTitle">نام کالا:</label><input type="text" id="prodTitle" required></div>
+            <div class="form-group"><label for="prodPrice">قیمت اصلی (تومان):</label><input type="number" id="prodPrice" required></div>
+            <div class="form-group"><label for="prodStock">📦 موجودی اولیه انبار:</label><input type="number" id="prodStock" required></div>
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="isAmazing" onchange="toggleAmazingOptions()">
-                <label for="isAmazing" style="display:inline; margin-right:5px; color:#e61c4d; font-weight:bold;">🔥 این یک پیشنهاد شگفت‌انگیز زمان‌دار باشد!</label>
+                <label for="isAmazing" style="color:#e61c4d; font-weight:bold;">🔥 پیشنهاد شگفت‌انگیز</label>
             </div>
-
             <div id="amazingOptions" class="amazing-options-box" style="display: none;">
-                <div class="form-group">
-                    <label for="discountPercent">🎯 درصد تخفیف دلخواه (%):</label>
-                    <input type="number" id="discountPercent" min="1" max="99" placeholder="مثلاً: 25">
-                </div>
-                <div class="form-group">
-                    <label for="discountDuration">⏳ مدت زمان تخفیف (به دقیقه):</label>
-                    <input type="number" id="discountDuration" min="1" placeholder="مثلاً: 5">
-                </div>
+                <div class="form-group"><label for="discountPercent">🎯 درصد تخفیف:</label><input type="number" id="discountPercent"></div>
+                <div class="form-group"><label for="discountDuration">⏳ مدت (دقیقه):</label><input type="number" id="discountDuration"></div>
             </div>
-
-            <div class="form-group">
-                <label for="prodDesc">توضیحات کالا:</label>
-                <textarea id="prodDesc" rows="3" placeholder="توضیحات محصول..." required></textarea>
-            </div>
-
+            <div class="form-group"><label for="prodDesc">توضیحات کالا:</label><textarea id="prodDesc" rows="3" required></textarea></div>
             <div class="media-section">
                 <div class="upload-box">
-                    <label for="imageInput" class="upload-label" style="display: block; padding: 20px; background: #eee; border-radius: 8px; text-align: center; cursor: pointer;">📸 انتخاب عکس کالا</label>
+                    <label for="imageInput" class="upload-label" style="display: block; padding: 20px; background: #eee; text-align: center; cursor: pointer;">📸 انتخاب عکس کالا</label>
                     <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-                    <img id="imgPreview" class="preview-target" src="#" alt="پیش‌نمایش" style="display:none; max-width: 100%; margin-top: 15px; border-radius: 8px;">
+                    <img id="imgPreview" src="#" alt="پیش‌نمایش" style="display:none; max-width: 100%; margin-top: 15px; border-radius: 8px;">
                 </div>
             </div>
-
-            <button type="submit" class="submit-btn">🚀 انتشار کالا در ویترین</button>
+            <button type="submit" class="submit-btn">🚀 انتشار کالا برای همه کاربران جهان</button>
         </form>
     </div>
-
     <script src="script.js"></script>
-    <script>
-        window.onload = function() { initThemeOnLoad(); };
-    </script>
 </body>
 </html>

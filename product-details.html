@@ -5,24 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>دیجی کاغذ - جزئیات محصول</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-
     <div class="cyber-bg-animation" id="cyberBg"></div>
-
     <div class="top-bar">
-        <div class="logo">📄 جزئیات محصول دیجی کاغذ</div>
+        <div class="logo">📄 جزئیات آنلاین محصول</div>
         <a href="index.html" class="nav-link">🏪 بازگشت به ویترین ←</a>
     </div>
-
     <div class="main-container" id="detailsContainer">
-        <p style="text-align: center; color: #999;">در حال بارگذاری اطلاعات کالا...</p>
+        <p style="text-align: center; color: #999;">در حال دریافت اطلاعات زنده از سرور ابری...</p>
     </div>
-
     <script src="script.js"></script>
     <script>
         window.onload = function() {
-            loadProductDetails();
+            setTimeout(() => { loadProductDetails(); }, 1000); // مهلت برای برقراری اتصال فایربیس
             initThemeOnLoad();
         };
     </script>
