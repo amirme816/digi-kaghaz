@@ -1,4 +1,3 @@
-// 🌐 اطلاعات اتصال اختصاصی فروشگاه دیجی کاغذ تو به گوگل فایربیس
 const firebaseConfig = {
   apiKey: "AIzaSyCLJ7grYpm2YWFeoO1BBDFg4dY77IE12So",
   authDomain: "digi-kaghaz.firebaseapp.com",
