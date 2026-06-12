@@ -8,16 +8,14 @@
 </head>
 <body>
 
-    <!-- نوار بالای سایت مخصوص ادمین -->
     <div class="top-bar">
         <div class="logo">🛠️ پنل مدیریت دیجی کاغذ</div>
         <a href="index.html" class="nav-link">🏪 ورود به ویترین مغازه ←</a>
     </div>
 
-    <!-- کانتینر اصلی فرم ثبت کالا -->
     <div class="main-container">
         <h1>📦 بارگذاری کالای جدید</h1>
-        <p class="subtitle">محصول خود را به ویترین اصلی فروشگاه اضافه کنید</p>
+        <p class="subtitle">محصول خود را به همراه تعداد انبار به فروشگاه اضافه کنید</p>
 
         <form id="productForm">
             <div class="form-group">
@@ -30,13 +28,16 @@
                 <input type="number" id="prodPrice" placeholder="مثلاً: 100000" required>
             </div>
 
-            <!-- تیک پیشنهاد شگفت‌انگیز -->
+            <div class="form-group">
+                <label for="prodStock">📦 موجودی اولیه انبار:</label>
+                <input type="number" id="prodStock" min="0" placeholder="مثلاً: 5" required>
+            </div>
+
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="isAmazing" onchange="toggleAmazingOptions()">
                 <label for="isAmazing" style="display:inline; margin-right:5px; color:#e61c4d; font-weight:bold;">🔥 این یک پیشنهاد شگفت‌انگیز زمان‌دار باشد!</label>
             </div>
 
-            <!-- بخش تنظیمات پیشرفته تخفیف و زمان -->
             <div id="amazingOptions" class="amazing-options-box" style="display: none;">
                 <div class="form-group">
                     <label for="discountPercent">🎯 درصد تخفیف دلخواه (%):</label>
@@ -55,9 +56,9 @@
 
             <div class="media-section">
                 <div class="upload-box">
-                    <label for="imageInput" class="upload-label">📸 عکس کالا</label>
-                    <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
-                    <img id="imgPreview" class="preview-target" src="#" alt="پیش‌نمایش" style="display:none;">
+                    <label for="imageInput" class="upload-label" style="display: block; padding: 20px; background: #eee; border-radius: 8px; text-align: center; cursor: pointer;">📸 انتخاب عکس کالا</label>
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
+                    <img id="imgPreview" class="preview-target" src="#" alt="پیش‌نمایش" style="display:none; max-width: 100%; margin-top: 15px; border-radius: 8px;">
                 </div>
             </div>
 
@@ -66,5 +67,8 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        window.onload = function() { initThemeOnLoad(); };
+    </script>
 </body>
 </html>

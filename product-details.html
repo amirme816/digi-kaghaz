@@ -8,23 +8,22 @@
 </head>
 <body>
 
-    <!-- نوار بالای صفحه جزئیات -->
+    <div class="cyber-bg-animation" id="cyberBg"></div>
+
     <div class="top-bar">
         <div class="logo">📄 جزئیات محصول دیجی کاغذ</div>
         <a href="index.html" class="nav-link">🏪 بازگشت به ویترین ←</a>
     </div>
 
-    <!-- کانتینر اصلی نمایش بزرگ محصول -->
     <div class="main-container" id="detailsContainer">
-        <!-- اطلاعات کالا توسط جاوااسکریپت اینجا تزریق می‌شود -->
         <p style="text-align: center; color: #999;">در حال بارگذاری اطلاعات کالا...</p>
     </div>
 
     <script src="script.js"></script>
     <script>
-        // اجرای خودکار لود دیتا به محض باز شدن این صفحه
         window.onload = function() {
             loadProductDetails();
+            initThemeOnLoad();
         };
     </script>
 </body>

@@ -3,46 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دیجی کاغذ - ویترین فروشگاه</title>
+    <title>دیجی کاغذ - ویترین فروشگاه سایبرپانک</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- نوار بالای سایت مخصوص خریدار -->
+    <div class="cyber-bg-animation" id="cyberBg"></div>
+
     <div class="top-bar">
-        <div class="logo">📄 ویترین دیجی کاغذ</div>
+        <div class="logo">📄 دیجی کاغذ</div>
         <div class="header-left">
+            <span class="coin-badge"><span class="coin-icon"></span> <span id="userCoins">۰</span> سکه</span>
             <a href="admin.html" class="nav-link admin-link">🛠️ پنل فروشنده</a>
-            <button id="themeToggle" class="theme-btn" onclick="toggleDarkMode()">🌙 حالت تاریک</button>
+            
+            <select id="themeSelector" class="theme-select" onchange="changeCyberTheme()">
+                <option value="light">☀️ تم روشن معمولی</option>
+                <option value="dark">🌙 حالت تاریک ساده</option>
+                <option value="matrix">⚡ ماتریکس متحرک</option>
+                <option value="neon-pulse">🔮 شفق نئونی متحرک</option>
+            </select>
+
             <div class="cart-status">
-                🛒 سبد خرید: <span id="cartCount">۰</span> کالا
+                🛒 سبد: <span id="cartCount">۰</span> کالا
             </div>
         </div>
     </div>
 
     <div class="main-container">
-        <h1 style="text-align: center;">🏪 به دیجی کاغذ خوش آمدید</h1>
-        <p class="subtitle">محصولات خلاقانه را با تخفیف‌های ثانیه‌ای شکار کنید!</p>
+        <h1 style="text-align: center;">🏪 ویترین هوشمند دیجی کاغذ</h1>
+        <p class="subtitle">محصولات را شکار کنید، سکه بگیرید و از مای کاغذ تخفیف بخرید!</p>
 
-        <!-- بخش سبد خرید زنده -->
+        <div style="text-align: center; margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
+            <button class="nav-toggle-btn" onclick="toggleWishlistSection()">❤️ لیست علاقه‌مندی‌ها</button>
+            <button class="nav-toggle-btn" style="border-color: #ffcc00; color: #ffcc00;" onclick="toggleMyPaperSection()">🪙 بخش مای کاغذ (بازارچه)</button>
+        </div>
+
+        <div id="myPaperSection" class="cart-section" style="display: none; border-color: #ffcc00; background: rgba(255, 204, 0, 0.05);">
+            <h3 style="color: #ffcc00;">🪙 مرکز خدمات «مای کاغذ»</h3>
+            <p style="font-size: 12px; color: #aaa; margin-top: -10px;">سکه‌های خود را خرج کنید و پاداش بگیرید:</p>
+            <div id="couponsMarketGrid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+                </div>
+            
+            <div style="margin-top: 15px; border-top: 1px dashed #ffcc00; padding-top: 10px;">
+                <h4 style="font-size: 13px; margin: 5px 0;">🎫 کدهای تخفیف فعال شما:</h4>
+                <ul id="myOwnedCoupons" style="font-size: 12px; padding-right: 20px; color: #2ecc71;"></ul>
+            </div>
+        </div>
+
+        <div id="wishlistSection" class="cart-section" style="display: none; border-color: #ff007f;">
+            <h3>❤️ لیست علاقه‌مندی‌های شما</h3>
+            <div id="wishlistItemsContainer" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));"></div>
+        </div>
+
         <div id="cartSection" class="cart-section" style="display: none;">
             <h3>🛒 سبد خرید شما</h3>
             <ul id="cartItemsList"></ul>
-            <div class="cart-total">
+
+            <div class="form-group" style="margin-top: 15px;">
+                <label style="font-size: 12px;">📅 انتخاب زمان ارسال چرخشی:</label>
+                <select id="deliveryTimeSlot" style="padding: 6px; font-size: 12px;">
+                    <option value="شنبه صبح">شنبه صبح (۹ الی ۱۳)</option>
+                    <option value="دوشنبه عصر">دوشنبه عصر (۱۵ الی ۲۰)</option>
+                    <option value="چهارشنبه شب">چهارشنبه شب (۱۸ الی ۲۲)</option>
+                </select>
+            </div>
+
+            <div class="coupon-box">
+                <input type="text" id="couponInput" placeholder="کد تخفیف خریداری شده را اینجا بزنید">
+                <button onclick="applyCoupon()">اعمال کد</button>
+            </div>
+            <p id="couponMsg" style="font-size: 11px; margin: 5px 0 0 0; text-align: right;"></p>
+
+            <div class="cart-total" style="margin-top:15px;">
                 <span>جمع کل فاکتور:</span>
                 <div>
                     <span id="totalPrice">۰</span> <span>تومان</span>
                 </div>
             </div>
-            <button class="checkout-btn" onclick="clearCart()">🧹 خالی کردن سبد</button>
+            <button class="checkout-btn" onclick="checkoutAndEarnCoins()">🧹 نهایی کردن خرید و دریافت سکه</button>
         </div>
 
-        <!-- ابزار جستجو -->
         <div class="filter-bar">
             <input type="text" id="searchInput" oninput="searchProducts()" placeholder="🔍 جستجوی کالا در ویترین...">
         </div>
 
-        <!-- کانتینر کارت‌های کالا -->
         <div id="shopContainer" class="shop-grid"></div>
     </div>
 
