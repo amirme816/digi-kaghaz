@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیجی کاغذ - جزئیات محصول</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- نوار بالای صفحه جزئیات -->
+    <div class="top-bar">
+        <div class="logo">📄 جزئیات محصول دیجی کاغذ</div>
+        <a href="index.html" class="nav-link">🏪 بازگشت به ویترین ←</a>
+    </div>
+
+    <!-- کانتینر اصلی نمایش بزرگ محصول -->
+    <div class="main-container" id="detailsContainer">
+        <!-- اطلاعات کالا توسط جاوااسکریپت اینجا تزریق می‌شود -->
+        <p style="text-align: center; color: #999;">در حال بارگذاری اطلاعات کالا...</p>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // اجرای خودکار لود دیتا به محض باز شدن این صفحه
+        window.onload = function() {
+            loadProductDetails();
+        };
+    </script>
+</body>
+</html>

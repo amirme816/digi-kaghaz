@@ -21,7 +21,7 @@ body.dark-mode input, body.dark-mode textarea {
     color: #fff;
     border-color: #00f0ff;
 }
-body.dark-mode .product-card h3 { color: #fff; }
+body.dark-mode .product-card h3, body.dark-mode .big-product-title { color: #fff; }
 body.dark-mode .product-card:hover {
     box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
     border-color: #00f0ff;
@@ -73,7 +73,7 @@ body.dark-mode .countdown-timer { background: #3a001c; color: #ff007f; border-co
 .comments-box { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; text-align: right; }
 body.dark-mode .comments-box { border-color: #331b54; }
 .comment-title { font-size: 12px; font-weight: bold; color: #888; margin-bottom: 5px;}
-.comments-list { max-height: 80px; overflow-y: auto; font-size: 12px; padding-right: 10px; margin-bottom: 8px;}
+.comments-list { max-height: 120px; overflow-y: auto; font-size: 12px; padding-right: 10px; margin-bottom: 8px;}
 .comments-list p { margin: 4px 0; background: #f9f9f9; padding: 4px 8px; border-radius: 4px; }
 body.dark-mode .comments-list p { background: #241442; color: #fff; }
 .comment-input-group { display: flex; gap: 5px; }
@@ -83,6 +83,10 @@ body.dark-mode .comments-list p { background: #241442; color: #fff; }
 .filter-bar { margin-bottom: 20px; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; margin-top: 25px; }
 .product-card { background: #ffffff; border-radius: 12px; padding: 16px; text-align: right; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #efefef; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+
+/* تغییر مکان‌نما روی بخش کلیک‌خور کالا */
+.product-link-area { cursor: pointer; }
+
 .product-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
 .product-card h3 { font-size: 14px; margin: 5px 0; height: 38px; overflow: hidden; color: #333; }
 .price-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -97,3 +101,9 @@ body.dark-mode .comments-list p { background: #241442; color: #fff; }
 #cartItemsList li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #f9d5dc; font-size: 13px; }
 .cart-total { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px; }
 .checkout-btn { background: #666; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; }
+
+/* استایل‌های نمایش بزرگ کالا */
+.big-product-img { width: 100%; max-height: 350px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.big-product-title { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 15px; }
+.big-product-desc { font-size: 15px; line-height: 1.6; color: #666; background: #fafafa; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: justify; }
+body.dark-mode .big-product-desc { background: #241442; color: #ddd; }
