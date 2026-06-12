@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیجی کاغذ - ویترین فروشگاه</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- نوار بالای سایت مخصوص خریدار -->
+    <div class="top-bar">
+        <div class="logo">📄 ویترین دیجی کاغذ</div>
+        <div class="header-left">
+            <a href="login.html" class="nav-link admin-link">🛠️ پنل فروشنده</a>
+            <button id="themeToggle" class="theme-btn" onclick="toggleDarkMode()">🌙 حالت تاریک</button>
+            <div class="cart-status">
+                🛒 سبد خرید: <span id="cartCount">۰</span> کالا
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h1 style="text-align: center;">🏪 به دیجی کاغذ خوش آمدید</h1>
+        <p class="subtitle">محصولات خلاقانه را با تخفیف‌های ثانیه‌ای شکار کنید!</p>
+
+        <!-- بخش سبد خرید زنده -->
+        <div id="cartSection" class="cart-section" style="display: none;">
+            <h3>🛒 سبد خرید شما</h3>
+            <ul id="cartItemsList"></ul>
+            <div class="cart-total">
+                <span>جمع کل فاکتور:</span>
+                <div>
+                    <span id="totalPrice">۰</span> <span>تومان</span>
+                </div>
+            </div>
+            <button class="checkout-btn" onclick="clearCart()">🧹 خالی کردن سبد</button>
+        </div>
+
+        <!-- ابزار جستجو -->
+        <div class="filter-bar">
+            <input type="text" id="searchInput" oninput="searchProducts()" placeholder="🔍 جستجوی کالا در ویترین...">
+        </div>
+
+        <!-- کانتینر کارت‌های کالا -->
+        <div id="shopContainer" class="shop-grid"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

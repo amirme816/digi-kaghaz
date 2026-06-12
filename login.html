@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیجی کاغذ - ورود به پنل مدیریت</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode"> <!-- این صفحه به صورت پیش‌فرض سایبرپانکی و شیک است -->
+
+    <div class="main-container" style="margin-top: 100px;">
+        <h1 style="text-align: center;">🔒 ورود به پنل فروشنده</h1>
+        <p class="subtitle">جهت دسترسی به پنل بارگذاری کالا، مشخصات خود را وارد کنید</p>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">👤 نام کاربری:</label>
+                <input type="text" id="username" placeholder="نام کاربری خود را وارد کنید" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">🔑 رمز عبور:</label>
+                <input type="password" id="password" placeholder="رمز عبور را وارد کنید" required style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit;">
+            </div>
+
+            <button type="submit" class="submit-btn" style="background-color: #ff007f; box-shadow: 0 0 10px rgba(255, 0, 127, 0.4);">🔓 ورود به حساب</button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="index.html" style="color: #00f0ff; text-decoration: none; font-size: 13px;">🏪 بازگشت به ویترین مغازه</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
