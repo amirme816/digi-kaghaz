@@ -1,113 +1,111 @@
+/* تنظیمات عمومی و فونت */
 body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background-color: #f0f2f5;
-    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+    text-align: right;
     margin: 0;
     padding: 20px;
-    transition: background-color 0.4s, color 0.4s;
+    background-color: #f5f6fa;
+    color: #2f3640;
+    transition: all 0.3s ease;
+}
+
+/* استایل تم‌ها */
+.dark-theme-simple { background-color: #1e272e; color: #f5f6fa; }
+.matrix-mode { background-color: #000000; color: #00ff00; font-family: monospace; }
+.neon-pulse-mode { background-color: #0b001a; color: #00ffff; }
+
+/* کانتینر کارت‌ها */
+#shopContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* کارت محصول */
+.product-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
     position: relative;
-    z-index: 1;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s;
+}
+.product-card:hover { transform: translateY(-5px); }
+.dark-theme-simple .product-card { background: #2f3640; }
+.matrix-mode .product-card { background: #111; border: 1px solid #00ff00; }
+
+.product-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 
-.cyber-bg-animation {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
+/* دکمه‌ها */
+.buy-btn {
+    background: #e61c4d;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 8px;
+}
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(255,0,0,0.1);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 5px;
 }
 
-body.matrix-mode .cyber-bg-animation {
-    opacity: 0.15;
-    background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), 
-                repeating-linear-gradient(0deg, transparent, transparent 2px, #00ff00 2px, #00ff00 4px);
-    background-size: 100% 4px;
-    animation: matrixLines 20s linear infinite;
+/* افکت زوم در صفحه جزئیات کالا */
+.zoom-container {
+    overflow: hidden;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    cursor: zoom-in;
+    width: 100%;
+    max-width: 400px;
 }
-@keyframes matrixLines { from { background-position: 0 0; } to { background-position: 0 100%; } }
-
-body.neon-pulse-mode .cyber-bg-animation {
-    opacity: 1;
-    background: linear-gradient(125deg, #0d0221, #241442, #0a0018);
-    background-size: 400% 400%;
-    animation: neonGradient 8s ease infinite;
+.zoom-container img {
+    width: 100%;
+    transition: transform 0.3s ease;
 }
-@keyframes neonGradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+.zoom-container:hover img {
+    transform: scale(1.3);
 }
 
-body.dark-theme-simple { background-color: #121212; color: #fff; }
-body.dark-theme-simple .top-bar, body.dark-theme-simple .main-container, body.dark-theme-simple .product-card { background: #1e1e1e; border-color: #333; color: #fff; }
-
-body.matrix-mode, body.neon-pulse-mode { background-color: #0d0221; color: #00f0ff; }
-body.matrix-mode .top-bar, body.matrix-mode .main-container, body.matrix-mode .product-card,
-body.neon-pulse-mode .top-bar, body.neon-pulse-mode .main-container, body.neon-pulse-mode .product-card {
-    background-color: rgba(26, 12, 54, 0.95);
-    border-color: #ff007f; 
-    box-shadow: 0 0 15px rgba(255, 0, 127, 0.2);
+/* تگ‌های خودکار موجودی */
+.tag-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
 }
-body.matrix-mode input, body.matrix-mode textarea, body.matrix-mode select,
-body.neon-pulse-mode input, body.neon-pulse-mode textarea, body.neon-pulse-mode select {
-    background-color: #241442; color: #fff; border-color: #00f0ff;
+.tag-out { background: #7f8c8d; }
+.tag-limited { background: #e67e22; }
+
+/* دکمه لایک فعال */
+.wishlist-btn-active {
+    color: #ff007f !important;
+    font-weight: bold;
 }
-
-.top-bar { max-width: 600px; margin: 0 auto 20px auto; background-color: #ffffff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-radius: 10px; box-sizing: border-box; }
-.logo { font-weight: bold; font-size: 18px; color: #e61c4d; }
-.header-left { display: flex; align-items: center; gap: 8px; }
-.theme-select { padding: 6px; border-radius: 20px; font-family: inherit; font-size: 11px; cursor: pointer; }
-
-.coin-badge { background: #333; color: #fff; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
-body.matrix-mode .coin-badge, body.neon-pulse-mode .coin-badge { background: #241442; border: 1px solid #ffcc00; }
-.coin-icon { width: 12px; height: 12px; background: #ffcc00; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #ffcc00; }
-
-.cart-status { background: #e61c4d; color: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-.main-container { max-width: 600px; background: white; margin: 0 auto; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); box-sizing: border-box; }
-.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
-.form-group { margin-bottom: 20px; text-align: right; }
-label { display: block; margin-bottom: 8px; font-weight: bold; }
-input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
-.checkbox-group { background: #fef0f0; padding: 10px; border-radius: 8px; text-align: right; }
-.amazing-options-box { background: #fff5f7; border: 1px dashed #e61c4d; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-
-.zoom-container { position: relative; overflow: hidden; cursor: zoom-in; border-radius: 12px; margin-bottom: 20px; }
-.zoom-container img { width: 100%; transition: transform 0.1s ease; transform-origin: center center; }
-
-.auto-tags-container { display: flex; gap: 5px; margin: 5px 0; flex-wrap: wrap; }
-.tag-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: white; }
-.tag-out { background: #555; }
-.tag-limited { background: #ff9900; animation: blink 1s infinite; }
-.tag-luxury { background: #9b59b6; }
-.tag-cheap { background: #2ecc71; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.action-row { display: flex; gap: 10px; margin: 10px 0; }
-.action-btn { flex: 1; background: #f0f2f5; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: bold; transition: background 0.2s; }
-body.matrix-mode .action-btn, body.neon-pulse-mode .action-btn { background: #241442; color: #fff; border: 1px solid #ff007f; }
-.action-btn:hover { background: #e2e5e9; }
-
-.avatar-box { font-size: 24px; background: #e1e4e8; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.comment-item { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; background: #f9f9f9; padding: 8px; border-radius: 8px; }
-body.matrix-mode .comment-item, body.neon-pulse-mode .comment-item { background: #241442; }
-
-.coupon-box { display: flex; gap: 5px; margin-top: 10px; }
-.coupon-box button { background: #333; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
-
-.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; margin-top: 25px; }
-.product-card { background: #ffffff; border-radius: 12px; padding: 16px; text-align: right; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #efefef; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-.product-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; }
-.buy-btn { width: 100%; background: #fff; color: #e61c4d; border: 1px solid #e61c4d; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
-.buy-btn:hover { background: #e61c4d; color: white; }
-.delete-btn { background: none; border: none; color: #ccc; cursor: pointer; position: absolute; top: 10px; left: 10px; z-index: 10; }
-.cart-section { background: #fff3f5; border: 2px solid #e61c4d; border-radius: 12px; padding: 20px; margin: 30px 0; }
-.checkout-btn { width: 100%; background-color: #e61c4d; color: white; border: none; padding: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
-.nav-toggle-btn { background: none; border: 1px solid #ff007f; color: #ff007f; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: bold; }
-
-/* استایل کارت‌های کوچک بخش تخفیف مای کاغذ */
-.coupon-market-card { background: #fff; border: 1px dashed #ffcc00; padding: 10px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; gap: 5px; }
-body.matrix-mode .coupon-market-card, body.neon-pulse-mode .coupon-market-card { background: #241442; }
-.coupon-market-card h4 { margin: 0; font-size: 12px; color: #ffcc00; }
-.coupon-market-card span { font-size: 11px; font-weight: bold; }
-.coupon-market-card button { background: #ffcc00; color: #000; border: none; border-radius: 4px; padding: 4px; font-size: 10px; cursor: pointer; font-family: inherit; font-weight: bold; }
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+}
