@@ -1,23 +1,14 @@
-const firebaseConfig = {
-  apiKey: "AIzaSyCLJ7grYpm2YWFeoO1BBDFg4dY77IE12So",
-  authDomain: "digi-kaghaz.firebaseapp.com",
-  databaseURL: "https://digi-kaghaz-default-rtdb.firebaseio.com", // دیتابیس آنلاین تو
-  projectId: "digi-kaghaz",
-  storageBucket: "digi-kaghaz.firebasestorage.app",
-  messagingSenderId: "201039194477",
-  appId: "1:201039194477:web:05828118c02f824a515264"
-};
+// 🌐 اطلاعات اتصال اختصاصی و بدون فیلتر فروشگاه دیجی کاغذ به سوپابیس
+const SUPABASE_URL = "https://djzsluagybvdklzekpin.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqenNsdWFneWJ2ZGtsemVrcGluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjAyNDIsImV4cCI6MjA5NjkzNjI0Mn0.T9Y4QBREEOFEqlSFu9-6uxKNnHHTxtTQS0nG6dMKRsI";
 
-// راه‌اندازی و برقراری ارتباط زنده با سرور
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const database = firebase.database();
+// راه‌اندازی اولیه کلاینت سوپابیس
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let selectedImageBase64 = "";
 let cart = []; 
 let currentDiscountPercent = 0;
-let globalProductsArray = []; // آرایه نگهداری محصولات همگام‌سازی شده با کل دنیا
+let globalProductsArray = [];
 
 const DEFAULT_PLACEHOLDER_IMAGE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 100 100'><rect width='100%25' height='100%25' fill='%23eee'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23aaa'>بدون تصویر</text></svg>";
 
@@ -37,23 +28,27 @@ function initThemeOnLoad() {
     updateCoinDisplay();
     renderCouponsMarket();
     renderOwnedCouponsList();
-    listenToLiveProducts(); // اتصال به سیستم گوش‌به‌زنگ فایربیس
+    fetchLiveProducts(); // خواندن محصولات از سرور
+    listenToLiveChanges(); // فعال‌سازی سیستم گوش‌به‌زنگ آنی
 }
 
-// 📡 دریافت همزمان محصولات: هر کس در دنیا کالا اضافه یا کم کند، صفحه بقیه در جا آپدیت می‌شود
-function listenToLiveProducts() {
-    database.ref('products').on('value', (snapshot) => {
-        const data = snapshot.val();
-        let productsList = [];
-        if (data) {
-            productsList = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key]
-            }));
-        }
-        globalProductsArray = productsList;
-        displayProducts(productsList);
-    });
+// 📡 خواندن کالاها از دیتابیس ابری سوپابیس
+async function fetchLiveProducts() {
+    const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: false });
+    if (!error && data) {
+        globalProductsArray = data;
+        displayProducts(data);
+    }
+}
+
+// ⚡ مانیتور کردن آنی دیتابیس بدون رفرش
+function listenToLiveChanges() {
+    supabaseClient
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+            fetchLiveProducts();
+        })
+        .subscribe();
 }
 
 function changeCyberTheme() {
@@ -89,10 +84,16 @@ function previewImage(event) {
     }
 }
 
-// 🚀 آپلود کالا روی دیتابیس ابری گوگل شما
+function toggleAmazingOptions() {
+    const isAmazing = document.getElementById('isAmazing').checked;
+    const box = document.getElementById('amazingOptions');
+    if(box) box.style.display = isAmazing ? 'block' : 'none';
+}
+
+// 🚀 آپلود مستقیم کالا روی سوپابیس بدون فیلترشکن
 const productForm = document.getElementById('productForm');
 if (productForm) {
-    productForm.addEventListener('submit', function(event) {
+    productForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         
         const title = document.getElementById('prodTitle').value.trim();
@@ -115,15 +116,17 @@ if (productForm) {
             title, price, stock, desc, isAmazing, discountPercent, endTime, image, comments: []
         };
         
-        database.ref('products').push(newProduct)
-        .then(() => {
-            alert("🎉 محصول با موفقیت روی سرورهای فایربیس آپلود شد و برای همه خریداران به نمایش درآمد!");
+        const { error } = await supabaseClient.from('products').insert([newProduct]);
+        
+        if(!error) {
+            alert("🎉 محصول با موفقیت روی سرور ابری آپلود شد و در کل دنیا منتشر گردید!");
             productForm.reset();
             if(document.getElementById('amazingOptions')) document.getElementById('amazingOptions').style.display = 'none';
             document.getElementById('imgPreview').style.display = 'none';
             selectedImageBase64 = "";
-        })
-        .catch(err => alert("خطا در اتصال به سرور ابری: " + err.message));
+        } else {
+            alert("خطا در آپلود دیتابیس: " + error.message);
+        }
     });
 }
 
@@ -173,7 +176,7 @@ function displayProducts(productsList) {
                 <img src="${prod.image}">
                 ${tagsHTML}
                 <h3 style="margin:5px 0 0 0;">${prod.title}</h3>
-                <div style="font-size:12px; color:#888; margin-top:2px;">موجودی انبار: ${stockValue} عدد</div>
+                <div style="font-size:12px; color:#888; margin-top:2px;">موجونی انبار: ${stockValue} عدد</div>
                 <div class="price" style="margin-top:5px; color:#e61c4d; font-weight:bold;">${finalPrice.toLocaleString('fa-IR')} تومان</div>
             </div>
             ${stockControlHTML}
@@ -188,15 +191,15 @@ function displayProducts(productsList) {
     });
 }
 
-function restockProduct(prodId) {
+async function restockProduct(prodId) {
     const inputEl = document.getElementById(`restockInput_${prodId}`);
     const amount = parseInt(inputEl.value) || 0;
     if(amount <= 0) return;
 
-    const prod = globalProductsArray.find(p => p.id === prodId);
+    const prod = globalProductsArray.find(p => p.id == prodId);
     if(prod) {
         const newStock = (prod.stock || 0) + amount;
-        database.ref('products/' + prodId).update({ stock: newStock });
+        await supabaseClient.from('products').update({ stock: newStock }).eq('id', prodId);
     }
 }
 
@@ -204,87 +207,85 @@ function goToDetails(prodId) {
     window.location.href = `product-details.html?id=${prodId}`;
 }
 
-function loadProductDetails() {
+async function loadProductDetails() {
     const container = document.getElementById('detailsContainer');
     if (!container) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const prodId = urlParams.get('id');
 
-    database.ref('products/' + prodId).once('value', (snapshot) => {
-        const prod = snapshot.val();
-        if (!prod) { container.innerHTML = "<h2>❌ کالا یافت نشد!</h2>"; return; }
+    const { data: prod } = await supabaseClient.from('products').select('*').eq('id', prodId).single();
+    if (!prod) { container.innerHTML = "<h2>❌ کالا یافت نشد!</h2>"; return; }
 
-        let stockValue = prod.stock !== undefined ? prod.stock : 0;
-        let notifyHTML = "";
-        if (stockValue === 0) {
-            notifyHTML = `
-                <div class="shipping-progress-container" style="border: 1px dashed #ff9900; padding:10px; background:rgba(255,153,0,0.05); margin: 15px 0;">
-                    📢 <strong>شارژ انبار آنلاین:</strong>
-                    <div style="display:flex; gap:5px; margin-top:5px;">
-                        <input type="number" id="detailRestockInput" placeholder="تعداد شارژ" style="padding:5px;">
-                        <button onclick="restockFromDetails('${prodId}')" style="background:#2ecc71; border:none; color:white; padding:5px; border-radius:6px; cursor:pointer;">ثبت آنلاین</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        let commentsHTML = "";
-        if (prod.comments) {
-            commentsHTML = Object.values(prod.comments).map(c => `
-                <div class="comment-item">
-                    <div class="avatar-box">${c.avatar || '🤖'}</div>
-                    <div><strong>${c.user}:</strong><br>${c.text}</div>
-                </div>
-            `).join('');
-        } else {
-            commentsHTML = "<p style='color:#aaa;'>هنوز نظری ثبت نشده است.</p>";
-        }
-
-        container.innerHTML = `
-            <div class="zoom-container"><img src="${prod.image}"></div>
-            <div class="big-product-title">${prod.title}</div>
-            <p>وضعیت انبار سراسری: <strong>${stockValue === 0 ? 'اتمام موجودی' : stockValue + ' عدد موجود'}</strong></p>
-            <div class="big-product-desc">${prod.desc}</div>
-            ${notifyHTML}
-            <button class="submit-btn" onclick="addToCart('${prodId}')" ${stockValue === 0 ? 'disabled' : ''}>🛒 افزودن به سبد خرید</button>
-            <div class="comments-box">
-                <div class="comment-title" style="font-size:16px;">💬 نظرات آنلاین خریداران:</div>
-                <div class="comments-list">${commentsHTML}</div>
-                <div class="comment-input-group">
-                    <input type="text" id="cName" placeholder="نام شما" style="width:100px; margin-bottom:5px;">
-                    <input type="text" id="cText" placeholder="متن نظر...">
-                    <button onclick="addAdvancedComment('${prodId}')" style="background:#e61c4d; color:white; border-radius:8px; padding:8px; border:none; cursor:pointer; margin-top:5px;">ارسال نظر عمومی</button>
+    let stockValue = prod.stock !== undefined ? prod.stock : 0;
+    let notifyHTML = "";
+    if (stockValue === 0) {
+        notifyHTML = `
+            <div class="shipping-progress-container" style="border: 1px dashed #ff9900; padding:10px; background:rgba(255,153,0,0.05); margin: 15px 0;">
+                📢 <strong>شارژ انبار آنلاین:</strong>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <input type="number" id="detailRestockInput" placeholder="تعداد شارژ" style="padding:5px;">
+                    <button onclick="restockFromDetails('${prod.id}')" style="background:#2ecc71; border:none; color:white; padding:5px; border-radius:6px; cursor:pointer;">ثبت آنلاین</button>
                 </div>
             </div>
         `;
-    });
+    }
+
+    let commentsHTML = "";
+    if (prod.comments && prod.comments.length > 0) {
+        commentsHTML = prod.comments.map(c => `
+            <div class="comment-item">
+                <div class="avatar-box">${c.avatar || '🤖'}</div>
+                <div><strong>${c.user}:</strong><br>${c.text}</div>
+            </div>
+        `).join('');
+    } else {
+        commentsHTML = "<p style='color:#aaa;'>هنوز نظری ثبت نشده است.</p>";
+    }
+
+    container.innerHTML = `
+        <div class="zoom-container"><img src="${prod.image}"></div>
+        <div class="big-product-title">${prod.title}</div>
+        <p>وضعیت انبار سراسری: <strong>${stockValue === 0 ? 'اتمام موجودی' : stockValue + ' عدد موجود'}</strong></p>
+        <div class="big-product-desc">${prod.desc}</div>
+        ${notifyHTML}
+        <button class="submit-btn" onclick="addToCart('${prod.id}')" ${stockValue === 0 ? 'disabled' : ''}>🛒 افزودن به سبد خرید</button>
+        <div class="comments-box">
+            <div class="comment-title" style="font-size:16px;">💬 نظرات آنلاین خریداران:</div>
+            <div class="comments-list">${commentsHTML}</div>
+            <div class="comment-input-group">
+                <input type="text" id="cName" placeholder="نام شما" style="width:100px; margin-bottom:5px;">
+                <input type="text" id="cText" placeholder="متن نظر...">
+                <button onclick="addAdvancedComment('${prod.id}')" style="background:#e61c4d; color:white; border-radius:8px; padding:8px; border:none; cursor:pointer; margin-top:5px;">ارسال نظر عمومی</button>
+            </div>
+        </div>
+    `;
 }
 
-function restockFromDetails(prodId) {
+async function restockFromDetails(prodId) {
     const val = parseInt(document.getElementById('detailRestockInput').value) || 0;
     if(val <= 0) return;
-    database.ref('products/' + prodId).once('value', snapshot => {
-        const currentStock = snapshot.val().stock || 0;
-        database.ref('products/' + prodId).update({ stock: currentStock + val }, () => {
-            loadProductDetails();
-        });
-    });
+    const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', prodId).single();
+    const currentStock = prod.stock || 0;
+    await supabaseClient.from('products').update({ stock: currentStock + val }).eq('id', prodId);
+    loadProductDetails();
 }
 
-function addAdvancedComment(prodId) {
+async function addAdvancedComment(prodId) {
     const name = document.getElementById('cName').value.trim();
     const text = document.getElementById('cText').value.trim();
     if(!name || !text) return;
 
-    const newComment = { user: name, text: text, avatar: "🤖" };
-    database.ref('products/' + prodId + '/comments').push(newComment, () => {
-        loadProductDetails();
-    });
+    const { data: prod } = await supabaseClient.from('products').select('comments').eq('id', prodId).single();
+    let currentComments = prod.comments || [];
+    currentComments.push({ user: name, text: text, avatar: "🤖" });
+
+    await supabaseClient.from('products').update({ comments: currentComments }).eq('id', prodId);
+    loadProductDetails();
 }
 
 function addToCart(prodId) {
-    const prod = globalProductsArray.find(p => p.id === prodId);
+    const prod = globalProductsArray.find(p => p.id == prodId);
     if (!prod || prod.stock <= 0) { alert("موجودی تمام شده!"); return; }
 
     cart.push(prod);
@@ -323,13 +324,11 @@ function calculateEarnedCoins(itemCount) {
 function checkoutAndEarnCoins() {
     if (cart.length === 0) return;
 
-    cart.forEach(cartItem => {
-        database.ref('products/' + cartItem.id).once('value', snapshot => {
-            const currentStock = snapshot.val().stock || 0;
-            if(currentStock > 0) {
-                database.ref('products/' + cartItem.id).update({ stock: currentStock - 1 });
-            }
-        });
+    cart.forEach(async (cartItem) => {
+        const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', cartItem.id).single();
+        if(prod && prod.stock > 0) {
+            await supabaseClient.from('products').update({ stock: prod.stock - 1 }).eq('id', cartItem.id);
+        }
     });
 
     let currentCoins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
@@ -397,9 +396,9 @@ function renderOwnedCouponsList() {
     });
 }
 
-function deleteProduct(prodId) {
+async function deleteProduct(prodId) {
     if(confirm("آیا مطمئن هستید که این کالا از دیتابیس ابری حذف شود؟")) {
-        database.ref('products/' + prodId).remove();
+        await supabaseClient.from('products').delete().eq('id', prodId);
     }
 }
 

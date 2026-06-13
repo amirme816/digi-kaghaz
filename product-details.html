@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>دیجی کاغذ - جزئیات محصول</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="cyber-bg-animation" id="cyberBg"></div>
@@ -15,12 +14,12 @@
         <a href="index.html" class="nav-link">🏪 بازگشت به ویترین ←</a>
     </div>
     <div class="main-container" id="detailsContainer">
-        <p style="text-align: center; color: #999;">در حال دریافت اطلاعات زنده از سرور ابری...</p>
+        <p style="text-align: center; color: #999;">در حال دریافت اطلاعات زنده از سرور ابری سوپابیس...</p>
     </div>
     <script src="script.js"></script>
     <script>
         window.onload = function() {
-            setTimeout(() => { loadProductDetails(); }, 1000); // مهلت برای برقراری اتصال فایربیس
+            setTimeout(() => { loadProductDetails(); }, 500); 
             initThemeOnLoad();
         };
     </script>
