@@ -38,7 +38,7 @@ async function fetchLiveProducts() {
     if (!error && data) {
         globalProductsArray = data;
         displayProducts(data);
-        renderWishlist(); // به‌روزرسانی لیست علاقه‌مندی‌ها
+        renderWishlist(); // همگام‌سازی لیست علاقه‌مندی‌ها در هر بارگذاری
     }
 }
 
@@ -159,6 +159,7 @@ function displayProducts(productsList) {
         tagsHTML += `</div>`;
 
         let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
+        // تبدیل شناسه به عدد برای هماهنگی با سوپابیس
         let isLiked = wishlist.includes(Number(prod.id));
 
         let stockControlHTML = "";
@@ -173,7 +174,7 @@ function displayProducts(productsList) {
 
         card.innerHTML = `
             <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct('${prod.id}')">❌</button>
-            <div class="product-link-area" onclick="goToDetails('${prod.id}')">
+            <div class="product-link-area" onclick="goToDetails('${prod.id}')" style="cursor:pointer;">
                 <img src="${prod.image}">
                 ${tagsHTML}
                 <h3 style="margin:5px 0 0 0;">${prod.title}</h3>
@@ -182,7 +183,7 @@ function displayProducts(productsList) {
             </div>
             ${stockControlHTML}
             <div class="action-row">
-                <button class="action-btn ${isLiked ? 'wishlist-btn-active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${prod.id}')">${isLiked ? '❤️ لایک شده' : '🤍 لایک'}</button>
+                <button class="action-btn" onclick="event.stopPropagation(); toggleWishlist('${prod.id}')">${isLiked ? '❤️ لایک شده' : '🤍 لایک'}</button>
             </div>
             <button class="buy-btn" onclick="event.stopPropagation(); addToCart('${prod.id}')" ${stockValue === 0 ? 'disabled style="background:#ccc; border:none; color:#666;"' : ''}>
                 ${stockValue === 0 ? '🚫 ناموجود' : '🛒 خرید سریع'}
@@ -290,7 +291,7 @@ function addToCart(prodId) {
     if (!prod || prod.stock <= 0) { alert("موجودی تمام شده!"); return; }
 
     cart.push(prod);
-    if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = cart.length;
+    if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = cart.length.toLocaleString('fa-IR');
     if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'block';
     updateCartUI();
 }
@@ -302,6 +303,7 @@ function updateCartUI() {
 
     cart.forEach((item) => {
         const li = document.createElement('li');
+        li.style = "display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;";
         li.innerHTML = `<span>${item.title}</span><strong>${item.price.toLocaleString('fa-IR')} تومان</strong>`;
         listContainer.appendChild(li);
         total += item.price;
@@ -322,29 +324,34 @@ function calculateEarnedCoins(itemCount) {
     return 0;
 }
 
-// 🛒 نهایی کردن خرید و کسر واقعی از انبار آنلاین سوپابیس
+// 🛒 اصلاح کسر موجودی واقعی از انبار آنلاین به صورت متوالی و ایمن
 async function checkoutAndEarnCoins() {
     if (cart.length === 0) return;
 
-    for (const cartItem of cart) {
-        const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', Number(cartItem.id)).single();
-        if (prod && prod.stock > 0) {
-            const newStock = prod.stock - 1;
-            await supabaseClient.from('products').update({ stock: newStock }).eq('id', Number(cartItem.id));
+    try {
+        for (const cartItem of cart) {
+            const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', Number(cartItem.id)).single();
+            if (prod && prod.stock > 0) {
+                const newStock = prod.stock - 1;
+                await supabaseClient.from('products').update({ stock: newStock }).eq('id', Number(cartItem.id));
+            }
         }
+
+        let currentCoins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
+        let earned = calculateEarnedCoins(cart.length);
+        localStorage.setItem('cyber_user_coins', currentCoins + earned);
+
+        alert(`🎉 خرید شما ثبت شد! ${earned} سکه پاداش گرفتید و از انبار آنلاین کسر گردید.`);
+        
+        cart = [];
+        currentDiscountPercent = 0;
+        if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = '۰';
+        if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'none';
+        updateCoinDisplay();
+        fetchLiveProducts(); // آپدیت زنده ویترین خریدار
+    } catch (err) {
+        console.error("خطا در تسویه حساب:", err);
     }
-
-    let currentCoins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
-    let earned = calculateEarnedCoins(cart.length);
-    localStorage.setItem('cyber_user_coins', currentCoins + earned);
-
-    alert(`🎉 خرید شما ثبت شد! ${earned} سکه پاداش گرفتید و از موجودی انبار کسر شد.`);
-    cart = [];
-    currentDiscountPercent = 0;
-    if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = '0';
-    if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'none';
-    updateCoinDisplay();
-    fetchLiveProducts(); // رفرش زنده اطلاعات صفحه
 }
 
 function applyCoupon() {
@@ -363,9 +370,15 @@ function applyCoupon() {
     }
 }
 
+// 🛒 توابع مدیریت نمایش پاپ‌آپ‌های اختصاصی خودت
 function toggleMyPaperSection() {
     const sec = document.getElementById('myPaperSection');
     if(sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleWishlistSection() {
+    const sec = document.getElementById('wishlistSection');
+    if (sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
 }
 
 function renderCouponsMarket() {
@@ -400,7 +413,7 @@ function renderOwnedCouponsList() {
     });
 }
 
-// ❤️ مدیریت سیستم علاقه‌مندی‌ها و لایک کالا
+// ❤️ اصلاح لایک و سیستم علاقه‌مندی‌ها منطبق با ساختار دیتابیس عددی
 function toggleWishlist(prodId) {
     let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
     const idNum = Number(prodId);
@@ -412,13 +425,8 @@ function toggleWishlist(prodId) {
     }
     
     localStorage.setItem('cyber_wishlist', JSON.stringify(wishlist));
-    displayProducts(); // رندر دوباره دکمه‌ها
-    renderWishlist();  // رندر دوباره لیست باکس
-}
-
-function toggleWishlistSection() {
-    const sec = document.getElementById('wishlistSection');
-    if (sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    displayProducts(); // رندر دوباره کارت‌ها برای آپدیت قلب‌ها
+    renderWishlist();  // رندر باکس پایینی
 }
 
 function renderWishlist() {
@@ -430,30 +438,28 @@ function renderWishlist() {
     let favoriteProducts = globalProductsArray.filter(p => wishlist.includes(Number(p.id)));
     
     if (favoriteProducts.length === 0) {
-        container.innerHTML = "<p style='color:#aaa; font-size:12px;'>لیست علاقه‌مندی‌های شما خالی است.</p>";
+        container.innerHTML = "<p style='color:#aaa; font-size:12px; padding: 10px;'>لیست علاقه‌مندی‌های شما خالی است.</p>";
         return;
     }
     
     favoriteProducts.forEach(prod => {
         const item = document.createElement('div');
-        item.className = "wishlist-item-mini";
-        item.style = "display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px; border-radius:8px; margin-bottom:5px; font-size:13px;";
+        item.style = "display:flex; justify-content:space-between; align-items:center; background:rgba(255, 0, 127, 0.05); padding:8px; border-radius:8px; border:1px solid rgba(255, 0, 127, 0.2); font-size:12px; color:inherit;";
         item.innerHTML = `
             <span>❤️ ${prod.title}</span>
-            <button onclick="toggleWishlist('${prod.id}')" style="background:none; border:none; color:#ff007f; cursor:pointer;">💔 حذف</button>
+            <button onclick="toggleWishlist('${prod.id}')" style="background:none; border:none; color:#ff007f; cursor:pointer; font-weight:bold;">حذف 💔</button>
         `;
         container.appendChild(item);
     });
 }
 
-// ❌ حذف واقعی کالا از سرور سوپابیس
 async function deleteProduct(prodId) {
     if(confirm("آیا مطمئن هستید که این کالا از دیتابیس ابری حذف شود؟")) {
         const { error } = await supabaseClient.from('products').delete().eq('id', Number(prodId));
         if (error) {
             alert("خطا در حذف: " + error.message);
         } else {
-            alert("🗑️ کالا با موفقیت از دیتابیس جهانی پاک شد.");
+            alert("🗑️ کالا با موفقیت حذف شد.");
         }
     }
 }
