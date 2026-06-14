@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدیریت سفارشات دیجی کاغذ</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --cyber-pink: #ff007f;
+            --cyber-cyan: #00f0ff;
+            --cyber-yellow: #ffcc00;
+            --cyber-dark: #0d0e15;
+            --cyber-gray: #1a1c28;
+            --cyber-text: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--cyber-dark);
+            color: var(--cyber-text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .admin-header {
+            text-align: center;
+            border-bottom: 2px solid var(--cyber-pink);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .admin-header h1 {
+            color: var(--cyber-pink);
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .order-card {
+            background: var(--cyber-gray);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .order-card.pending { border-left: 5px solid var(--cyber-yellow); }
+        .order-card.approved { border-left: 5px solid #2ecc71; }
+        .order-card.rejected { border-left: 5px solid var(--cyber-pink); }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status-badge.pending { background: rgba(255, 204, 0, 0.2); color: var(--cyber-yellow); }
+        .status-badge.approved { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .status-badge.rejected { background: rgba(255, 0, 127, 0.2); color: var(--cyber-pink); }
+
+        .buyer-info h3 {
+            margin: 0 0 10px 0;
+            color: var(--cyber-cyan);
+            font-size: 18px;
+        }
+
+        .buyer-info p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .items-list {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .items-list ul {
+            margin: 5px 0 0 0;
+            padding-right: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .receipt-preview-zone {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .receipt-img {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .receipt-img:hover {
+            transform: scale(1.03);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-family: inherit;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-approve { background: #2ecc71; color: white; }
+        .btn-reject { background: var(--cyber-pink); color: white; }
+        
+        .no-orders {
+            text-align: center;
+            color: #666;
+            grid-column: 1 / -1;
+            padding: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-header">
+    <h1>🔒 میز مدیریت دیجی کاغذ (جناب میرزایی)</h1>
+    <p style="font-size: 12px; color: #888; margin-top: 5px;">بررسی زنده رسیدهای واریزی و تایید سفارشات</p>
+</div>
+
+<div class="orders-grid" id="ordersGrid">
+    <p class="no-orders">در حال بارگذاری سفارشات از سرور ابری...</p>
+</div>
+
+<script>
+    // اطلاعات اتصال اختصاصی دیتابیس سوپابیس شما
+    const SUPABASE_URL = "https://djzsluagybvdklzekpin.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqenNsdWFneWJ2ZGtsemVrcGluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjAyNDIsImV4cCI6MjA5NjkzNjI0Mn0.T9Y4QBREEOFEqlSFu9-6uxKNnHHTxtTQS0nG6dMKRsI";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // اجرای خودکار در بدو ورود
+    window.onload = function() {
+        fetchAdminOrders();
+        listenToLiveOrders(); // گوش‌به‌زنگ آنی برای فاکتورهای جدید
+    };
+
+    // دریافت لیست فاکتورها از جدول order_receipts
+    async function fetchAdminOrders() {
+        const { data, error } = await supabaseClient
+            .from('order_receipts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            document.getElementById('ordersGrid').innerHTML = `<p class="no-orders" style="color:red;">خطا در دریافت اطلاعات: ${error.message}</p>`;
+            return;
+        }
+
+        renderOrders(data);
+    }
+
+    // گوش‌به‌زنگ آنی دیتابیس (وقتی مشتری دکمه ثبت رسید را می‌زند، اینجا فورا ظاهر می‌شود)
+    function listenToLiveOrders() {
+        supabaseClient
+            .channel('live-orders-channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'order_receipts' }, () => {
+                fetchAdminOrders();
+            })
+            .subscribe();
+    }
+
+    // رندر کردن کارت‌های سفارش
+    function renderOrders(orders) {
+        const container = document.getElementById('ordersGrid');
+        container.innerHTML = "";
+
+        if (!orders || orders.length === 0) {
+            container.innerHTML = `<p class="no-orders">هنوز هیچ رسیدی توسط مشتریان ثبت نشده است.</p>`;
+            return;
+        }
+
+        orders.forEach(order => {
+            const card = document.createElement('div');
+            
+            // تعیین کلاس بر اساس وضعیت
+            let statusClass = 'pending';
+            let statusText = '⏳ در انتظار تایید';
+            if (order.status === 'تایید شده') { statusClass = 'approved'; statusText = '✅ تایید شده'; }
+            if (order.status === 'رد شده') { statusClass = 'rejected'; statusText = '❌ رد شده'; }
+
+            card.className = `order-card ${statusClass}`;
+
+            // استخراج لیست محصولات خریداری شده
+            let itemsHTML = "";
+            if (order.cart_items && order.cart_items.length > 0) {
+                itemsHTML = order.cart_items.map(item => `<li>${item.title} (${item.price.toLocaleString('fa-IR')} تومان)</li>`).join('');
+            } else {
+                itemsHTML = "<li>اطلاعات سبد خرید ثبت نشده</li>";
+            }
+
+            card.innerHTML = `
+                <span class="status-badge ${statusClass}">${statusText}</span>
+                <div class="buyer-info">
+                    <h3>👤 ${order.buyer_name}</h3>
+                    <p>📞 <strong>تلفن:</strong> ${order.buyer_phone}</p>
+                    <p>✉️ <strong>ایمیل:</strong> ${order.buyer_email}</p>
+                    <p>📅 <strong>زمان ارسال:</strong> ${order.delivery_slot}</p>
+                    <p>💰 <strong>مبلغ واریزی:</strong> <strong style="color:#2ecc71;">${order.total_price.toLocaleString('fa-IR')} تومان</strong></p>
+                </div>
+
+                <div class="items-list">
+                    <strong>📦 سبد خرید:</strong>
+                    <ul>${itemsHTML}</ul>
+                </div>
+
+                <div class="receipt-preview-zone">
+                    <p style="font-size: 11px; color:#aaa; margin-bottom:5px;">📷 عکس رسید آپلود شده (برای بزرگنمایی کلیک کنید):</p>
+                    <img src="${order.receipt_image}" class="receipt-img" onclick="openFullReceipt('${order.receipt_image}')">
+                </div>
+
+                ${order.status === 'در انتظار تایید' ? `
+                    <div class="action-buttons">
+                        <button class="btn btn-approve" onclick="updateOrderStatus(${order.id}, 'تایید شده')">✓ تایید و ارسال</button>
+                        <button class="btn btn-reject" onclick="updateOrderStatus(${order.id}, 'رد شده')">✕ رد رسید</button>
+                    </div>
+                ` : `
+                    <p style="text-align:center; font-size:12px; color:#666; margin:0;">تغییر وضعیت در ${new Date(order.created_at).toLocaleDateString('fa-IR')}</p>
+                `}
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // تغییر وضعیت فاکتور (تایید یا رد) در سوپابیس
+    async function updateOrderStatus(orderId, newStatus) {
+        const { error } = await supabaseClient
+            .from('order_receipts')
+            .update({ status: newStatus })
+            .eq('id', orderId);
+
+        if (error) {
+            alert("خطا در به‌روزرسانی وضعیت: " + error.message);
+        } else {
+            alert(`سفارش با موفقیت "${newStatus}" شد.`);
+            fetchAdminOrders();
+        }
+    }
+
+    // باز کردن عکس رسید در سایز بزرگ در تب جدید
+    function openFullReceipt(base64Src) {
+        const newTab = window.open();
+        newTab.document.write(`<body style="background:#000; margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;"><img src="${base64Src}" style="max-width:100%; max-height:100vh;"></body>`);
+    }
+</script>
+
+</body>
+</html>

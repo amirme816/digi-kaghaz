@@ -159,7 +159,6 @@ function displayProducts(productsList) {
         tagsHTML += `</div>`;
 
         let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
-        // تبدیل شناسه به عدد برای هماهنگی با سوپابیس
         let isLiked = wishlist.includes(Number(prod.id));
 
         let stockControlHTML = "";
@@ -324,34 +323,26 @@ function calculateEarnedCoins(itemCount) {
     return 0;
 }
 
-// 🛒 اصلاح کسر موجودی واقعی از انبار آنلاین به صورت متوالی و ایمن
-async function checkoutAndEarnCoins() {
-    if (cart.length === 0) return;
+// 🔄 تغییر یافته: هدایت کاربر به صفحه جدید درگاه پرداخت به همراه اطلاعات فاکتور
+function checkoutAndEarnCoins() {
+    if (cart.length === 0) { alert("سبد خرید شما خالی است!"); return; }
 
-    try {
-        for (const cartItem of cart) {
-            const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', Number(cartItem.id)).single();
-            if (prod && prod.stock > 0) {
-                const newStock = prod.stock - 1;
-                await supabaseClient.from('products').update({ stock: newStock }).eq('id', Number(cartItem.id));
-            }
-        }
+    // دریافت مبلغ کل نهایی فاکتور از روی قالب سایت شما
+    const totalPriceText = document.getElementById('totalPrice').textContent;
+    
+    // دریافت زمان ارسال چرخشی انتخاب شده توسط خریدار
+    const deliverySlot = document.getElementById('deliveryTimeSlot').value;
 
-        let currentCoins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
-        let earned = calculateEarnedCoins(cart.length);
-        localStorage.setItem('cyber_user_coins', currentCoins + earned);
+    // استخراج اطلاعات کوتاه محصولات سبد خرید
+    const orderItems = cart.map(item => ({ id: item.id, title: item.title, price: item.price }));
 
-        alert(`🎉 خرید شما ثبت شد! ${earned} سکه پاداش گرفتید و از انبار آنلاین کسر گردید.`);
-        
-        cart = [];
-        currentDiscountPercent = 0;
-        if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = '۰';
-        if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'none';
-        updateCoinDisplay();
-        fetchLiveProducts(); // آپدیت زنده ویترین خریدار
-    } catch (err) {
-        console.error("خطا در تسویه حساب:", err);
-    }
+    // ذخیره فاکتور در حافظه محلی مرورگر جهت خواندن در صفحه درگاه پرداخت جدید
+    localStorage.setItem('checkout_total_price', totalPriceText);
+    localStorage.setItem('checkout_delivery_slot', deliverySlot);
+    localStorage.setItem('checkout_cart_items', JSON.stringify(orderItems));
+
+    // انتقال مستقیم کاربر به صفحه مجزای پرداخت کالا
+    window.location.href = "checkout.html";
 }
 
 function applyCoupon() {
@@ -370,7 +361,6 @@ function applyCoupon() {
     }
 }
 
-// 🛒 توابع مدیریت نمایش پاپ‌آپ‌های اختصاصی خودت
 function toggleMyPaperSection() {
     const sec = document.getElementById('myPaperSection');
     if(sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
@@ -413,7 +403,6 @@ function renderOwnedCouponsList() {
     });
 }
 
-// ❤️ اصلاح لایک و سیستم علاقه‌مندی‌ها منطبق با ساختار دیتابیس عددی
 function toggleWishlist(prodId) {
     let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
     const idNum = Number(prodId);

@@ -13,7 +13,9 @@
         <div class="logo">📄 دیجی کاغذ آنلاین</div>
         <div class="header-left">
             <span class="coin-badge"><span class="coin-icon"></span> <span id="userCoins">۰</span> سکه</span>
-            <a href="admin.html" class="nav-link admin-link">🛠️ پنل فروشنده</a>
+            
+            <a href="#" onclick="openSellerModal(event)" class="nav-link admin-link" style="text-decoration: none;">💼 پنل فروشنده</a>
+            
             <select id="themeSelector" class="theme-select" onchange="changeCyberTheme()">
                 <option value="light">☀️ تم روشن</option>
                 <option value="dark">🌙 حالت تاریک</option>
@@ -66,6 +68,84 @@
         <div class="filter-bar"><input type="text" id="searchInput" oninput="searchProducts()" placeholder="🔍 جستجوی آنی کالا..."></div>
         <div id="shopContainer" class="shop-grid"></div>
     </div>
+
+    <div id="paymentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box;">
+        <div style="background: #111; max-width: 440px; width: 100%; padding: 25px; border-radius: 8px; border: 2px solid #ffcc00; box-shadow: 0 0 20px rgba(255,204,0,0.2); text-align: right; direction: rtl; font-family: inherit; position: relative; color: #fff;">
+            <button onclick="closePaymentModal()" style="position: absolute; top: 10px; left: 10px; background: none; border: none; color: #ff007f; font-size: 18px; cursor: pointer; font-weight: bold;">❌</button>
+            
+            <h3 style="color: #ffcc00; margin-top: 0; border-bottom: 1px dashed #ffcc00; padding-bottom: 10px; text-align: center;">💳 انتقال وجه کارت به کارت</h3>
+            
+            <p style="font-size: 13px; line-height: 1.6; margin-top: 15px; color: #ccc;">لطفاً مبلغ فاکتور را به شماره کارت زیر واریز نمایید و تصویر رسید را بارگذاری فرمایید:</p>
+            
+            <div style="background: rgba(255,204,0,0.05); padding: 15px; border-radius: 6px; text-align: center; margin: 15px 0; border: 1px solid #ffcc00;">
+                <div style="font-size: 11px; color: #aaa; margin-bottom: 5px;">شماره کارت دیجی کاغذ:</div>
+                <strong style="font-size: 18px; color: #ffcc00; letter-spacing: 1px;">۶۲۱۹-۸۶۱۹-۵۲۱۷-۸۷۲۰</strong>
+                <div style="font-size: 13px; margin-top: 5px; font-weight: bold;">به نام: امیرabbas</div>
+            </div>
+
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border: 1px solid #44px;">
+                <span>💰 مبلغ نهایی قابل پرداخت:</span>
+                <strong id="modalTotalPrice" style="color: #2ecc71; font-size: 16px;">۰ تومان</strong>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; margin-bottom:5px; font-size:12px; color: #aaa;">📱 شماره تلفن همراه خریدار:</label>
+                <input type="text" id="buyerPhone" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" style="width:100%; box-sizing:border-box; padding:8px; background:#222; border:1px solid #555; color:#fff; border-radius:4px; font-family:inherit;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; margin-bottom:5px; font-size:12px; color: #aaa;">📸 بارگذاری تصویر یا اسکرین‌شات رسید:</label>
+                <input type="file" id="receiptImageInput" accept="image/*" onchange="previewReceipt(event)" style="font-size:12px;">
+                <img id="receiptPreview" src="#" alt="پیش‌نمایش" style="display:none; max-width: 100%; max-height: 120px; object-fit: contain; margin-top: 10px; border: 1px dashed #ffcc00; margin-left: auto; margin-right: auto; border-radius:4px;">
+            </div>
+
+            <button onclick="submitReceiptAndOrder()" style="width: 100%; padding: 12px; font-weight: bold; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-family:inherit; font-size:14px; box-shadow: 0 4px 10px rgba(46,204,113,0.2);">🚀 ثبت رسید و ارسال نهایی سفارش</button>
+        </div>
+    </div>
+
+    <div id="sellerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10000; justify-content: center; align-items: center; direction: rtl; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <div style="background: #1a1c28; border: 2px solid #00f0ff; box-shadow: 0 0 25px rgba(0,240,255,0.2); padding: 30px; border-radius: 12px; width: 90%; max-width: 420px; text-align: center; position: relative;">
+            
+            <span onclick="closeSellerModal()" style="position: absolute; top: 10px; left: 15px; color: #ff007f; font-size: 20px; cursor: pointer; font-weight: bold;">✕</span>
+            
+            <h3 style="color: #00f0ff; margin-top: 0; margin-bottom: 25px; font-size: 18px; letter-spacing: 0.5px;">میز کار مدیریت دیجی کاغذ</h3>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; align-items: center; margin-top: 10px;">
+                <a href="admin.html" style="flex: 1; background: linear-gradient(45deg, #00f0ff, #0077ff); color: white; padding: 20px 10px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 12px rgba(0,240,255,0.15); display: block;">
+                    <div style="font-size: 22px; margin-bottom: 5px;">➕</div>
+                    ثبت کالا
+                </a>
+                
+                <a href="#" onclick="goToVerifyPanel(event)" style="flex: 1; background: linear-gradient(45deg, #ffcc00, #ff6600); color: black; padding: 20px 10px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 12px rgba(255,204,0,0.15); display: block;">
+                    <div style="font-size: 22px; margin-bottom: 5px;">🔎</div>
+                    تایید کالا
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openSellerModal(event) {
+            event.preventDefault();
+            document.getElementById('sellerModal').style.display = 'flex';
+        }
+
+        function closeSellerModal() {
+            document.getElementById('sellerModal').style.display = 'none';
+        }
+
+        function goToVerifyPanel(event) {
+            event.preventDefault();
+            const password = prompt("🔑 لطفاً رمز عبور مدیریت را وارد کنید:");
+            if (password === "1234") {
+                closeSellerModal();
+                window.location.href = "verify.html"; 
+            } else if (password !== null) {
+                alert("❌ رمز عبور اشتباه است!");
+            }
+        }
+    </script>
+
     <script src="script.js"></script>
 </body>
 </html>

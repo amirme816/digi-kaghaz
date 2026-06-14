@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>درگاه پرداخت دیجی کاغذ</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --cyber-pink: #ff007f;
+            --cyber-cyan: #00f0ff;
+            --cyber-yellow: #ffcc00;
+            --cyber-dark: #0d0e15;
+            --cyber-gray: #1a1c28;
+            --cyber-text: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--cyber-dark);
+            color: var(--cyber-text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .checkout-container {
+            background-color: var(--cyber-gray);
+            border: 2px solid var(--cyber-yellow);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 480px;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--cyber-yellow);
+            margin-top: 0;
+            border-bottom: 2px dashed rgba(255, 204, 0, 0.2);
+            padding-bottom: 15px;
+            text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+            font-size: 20px;
+        }
+
+        .card-box {
+            background: rgba(255, 204, 0, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            border: 1px solid var(--cyber-yellow);
+        }
+
+        .invoice-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .invoice-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .total-row {
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-top: 8px;
+            margin-top: 8px;
+            font-weight: bold;
+            color: #2ecc71;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .optional-label {
+            font-size: 11px;
+            color: #666;
+            margin-right: 5px;
+        }
+
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            background: #0d0e15;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--cyber-yellow);
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+        }
+
+        .file-upload-box {
+            border: 1px dashed #555;
+            padding: 10px;
+            border-radius: 6px;
+            background: #0d0e15;
+            text-align: center;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+            font-family: inherit;
+            margin-top: 10px;
+        }
+
+        .btn-cancel {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--cyber-pink);
+            text-decoration: none;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="checkout-container">
+    <h2>درگاه پرداخت دیجی کاغذ</h2>
+    
+    <p style="font-size: 12px; line-height: 1.6; color: #aaa; text-align: center; margin-top: 5px;">لطفاً مبلغ فاکتور را به کارت زیر واریز کرده و مشخصات خریدار را همراه با عکس رسید آپلود کنید:</p>
+
+    <div class="card-box">
+        <div style="font-size: 11px; color: #aaa; margin-bottom: 5px;">شماره کارت رسمی فروشگاه:</div>
+        <strong style="font-size: 19px; color: var(--cyber-yellow); letter-spacing: 1px;">۶۲۱۹-۸۶۱۹-۵۲۱۷-۸۷۲۰</strong>
+        <div style="font-size: 13px; margin-top: 6px; font-weight: bold; color: #fff;">به نام: میرزایی</div>
+    </div>
+
+    <div class="invoice-box">
+        <div class="invoice-row">
+            <span>📅 زمان ارسال چرخشی:</span>
+            <span id="displayDeliverySlot" style="color: var(--cyber-cyan);">ثبت نشده</span>
+        </div>
+        <div class="invoice-row total-row">
+            <span>💰 مبلغ کل فاکتور:</span>
+            <span><span id="displayTotalPrice">۰</span> تومان</span>
+        </div>
+    </div>
+
+    <div class="payment-form">
+        <div class="form-group">
+            <label>👤 نام و نام خانوادگی خریدار: <span style="color:var(--cyber-pink);">*</span></label>
+            <input type="text" id="buyerName" placeholder="مثال: امیرعباس میرزایی">
+        </div>
+
+        <div class="form-group">
+            <label>📱 شماره تلفن همراه خریدار: <span style="color:var(--cyber-pink);">*</span></label>
+            <input type="text" id="buyerPhone" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹">
+        </div>
+
+        <div class="form-group">
+            <label>✉️ آدرس ایمیل: <span class="optional-label">(اختیاری)</span></label>
+            <input type="email" id="buyerEmail" placeholder="name@example.com">
+        </div>
+
+        <div class="form-group">
+            <label>📸 بارگذاری اسکرین‌شات یا عکس رسید واریز: <span style="color:var(--cyber-pink);">*</span></label>
+            <div class="file-upload-box">
+                <input type="file" id="receiptImageInput" accept="image/*" onchange="previewReceipt(event)" style="font-size: 12px; color: #aaa;">
+                <img id="receiptPreview" src="#" alt="پیش‌نمایش رسید" style="display:none; max-width: 100%; max-height: 150px; object-fit: contain; margin-top: 12px; border: 1px dashed var(--cyber-yellow); border-radius: 4px; margin-left: auto; margin-right: auto;">
+            </div>
+        </div>
+
+        <button onclick="submitReceiptAndOrder()" class="btn-submit">🚀 ثبت اطلاعات و تایید نهایی پرداخت</button>
+        <a href="index.html" class="btn-cancel">❌ انصراف و بازگشت به فروشگاه</a>
+    </div>
+</div>
+
+<script>
+    // اطلاعات اتصال اختصاصی دیتابیس سوپابیس شما
+    const SUPABASE_URL = "https://djzsluagybvdklzekpin.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqenNsdWFneWJ2ZGtsemVrcGluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjAyNDIsImV4cCI6MjA5NjkzNjI0Mn0.T9Y4QBREEOFEqlSFu9-6uxKNnHHTxtTQS0nG6dMKRsI";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let selectedReceiptBase64 = "";
+
+    // دریافت اطلاعات فاکتور از حافظه در بدو ورود به صفحه درگاه
+    window.onload = function() {
+        const checkoutTotal = localStorage.getItem('checkout_total_price') || '۰';
+        const deliverySlot = localStorage.getItem('checkout_delivery_slot') || 'ثبت نشده';
+
+        document.getElementById('displayTotalPrice').textContent = checkoutTotal;
+        document.getElementById('displayDeliverySlot').textContent = deliverySlot;
+    };
+
+    // پیش‌نمایش زنده عکس آپلود شده
+    function previewReceipt(event) {
+        const input = event.target;
+        const preview = document.getElementById('receiptPreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result; 
+                preview.style.display = 'block';
+                selectedReceiptBase64 = e.target.result; // تبدیل تصویر به متن جهت ذخیره
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // ارسال داده‌های تکمیل‌شده همراه با عکس رسید به سوپابیس
+    async function submitReceiptAndOrder() {
+        const fullName = document.getElementById('buyerName').value.trim();
+        const phone = document.getElementById('buyerPhone').value.trim();
+        const email = document.getElementById('buyerEmail').value.trim();
+
+        // بررسی فیلدهای اجباری
+        if (!fullName) { alert("لطفاً نام و نام خانوادگی خود را وارد کنید."); return; }
+        if (!phone) { alert("لطفاً شماره تلفن همراه خود را وارد کنید."); return; }
+        if (!selectedReceiptBase64) { alert("لطفاً تصویر رسید واریز را بارگذاری کنید."); return; }
+
+        // آماده‌سازی مبلغ فاکتور
+        const checkoutTotal = localStorage.getItem('checkout_total_price') || '0';
+        const cleanPrice = checkoutTotal.replace(/,/g, '');
+        const englishPrice = cleanPrice.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[0-9]/g, d => d);
+        const finalPriceNumeric = parseInt(englishPrice) || 0;
+
+        const cartData = JSON.parse(localStorage.getItem('checkout_cart_items')) || [];
+        const deliverySlot = localStorage.getItem('checkout_delivery_slot') || 'ثبت نشده';
+
+        // ۱. آپلود و ثبت اطلاعات خریدار به همراه رسید در جدول order_receipts
+        const { error: orderError } = await supabaseClient.from('order_receipts').insert([
+            {
+                buyer_name: fullName,
+                buyer_phone: phone,
+                buyer_email: email ? email : "ثبت نشده",
+                total_price: finalPriceNumeric,
+                cart_items: cartData,
+                delivery_slot: deliverySlot,
+                receipt_image: selectedReceiptBase64,
+                status: 'در انتظار تایید'
+            }
+        ]);
+
+        if (orderError) {
+            alert("خطا در ثبت فاکتور روی دیتابیس ابری: " + orderError.message);
+            return;
+        }
+
+        // ۲. کسر متوالی از تعداد محصولات موجود در انبار سوپابیس
+        try {
+            for (const cartItem of cartData) {
+                const { data: prod } = await supabaseClient.from('products').select('stock').eq('id', Number(cartItem.id)).single();
+                if (prod && prod.stock > 0) {
+                    await supabaseClient.from('products').update({ stock: prod.stock - 1 }).eq('id', Number(cartItem.id));
+                }
+            }
+
+            // محاسبه سکه‌های هدیه
+            let currentCoins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
+            let earned = 0;
+            if (cartData.length === 1) earned = 1;
+            else if (cartData.length >= 2 && cartData.length <= 4) earned = 2;
+            else if (cartData.length === 5 || cartData.length === 6) earned = 3;
+            else if (cartData.length >= 7 && cartData.length <= 9) earned = 4;
+            else if (cartData.length >= 10) earned = 5;
+
+            localStorage.setItem('cyber_user_coins', currentCoins + earned);
+
+            alert(`🎉 رسید و اطلاعات شما با موفقیت ثبت شد!\nسفارش شما پس از تایید مدیریت ارسال می‌شود.\nشما ${earned} سکه پاداش گرفتید.`);
+            
+            // تمیزکاری حافظه موقت مرورگر و هدایت به صفحه اصلی
+            localStorage.removeItem('checkout_total_price');
+            localStorage.removeItem('checkout_delivery_slot');
+            localStorage.removeItem('checkout_cart_items');
+            
+            window.location.href = "index.html";
+        } catch (err) {
+            console.error(err);
+            window.location.href = "index.html";
+        }
+    }
+</script>
+
+</body>
+</html>
