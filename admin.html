@@ -50,8 +50,8 @@
 
         let encodedImageBase64 = "";
 
-        // باز و بسته کردن باکس شگفت‌انگیز
-         Lahze i function toggleAmazingOptions() {
+        // باز و بسته کردن باکس شگفت‌انگیز (غلط املایی تصحیح شد)
+        function toggleAmazingOptions() {
             const isChecked = document.getElementById('isAmazing').checked;
             document.getElementById('amazingOptions').style.display = isChecked ? 'block' : 'none';
         }
@@ -66,15 +66,15 @@
                 reader.onload = function(e) {
                     preview.src = e.target.result;
                     preview.style.display = 'block';
-                    encodedImageBase64 = e.target.result; // رشته متنی عکس
+                    encodedImageBase64 = e.target.result; 
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        // فرستادن اطلاعات کالا به جدول products دیتابیس
+        // فرستادن اطلاعات کالا به جدول products دیتابیس (همگام‌سازی شده با ساختار دیتابیس شما)
         async function uploadProduct(event) {
-            event.preventDefault();
+            event.preventDefault(); // جلوگیر‌ی قطعی از پریدن صفحه
 
             const title = document.getElementById('prodTitle').value.trim();
             const price = parseInt(document.getElementById('prodPrice').value) || 0;
@@ -83,11 +83,12 @@
             const isAmazing = document.getElementById('isAmazing').checked;
             
             let discountPercent = 0;
-            let discountDuration = 0;
+            let endTime = null;
 
             if (isAmazing) {
                 discountPercent = parseInt(document.getElementById('discountPercent').value) || 0;
-                discountDuration = parseInt(document.getElementById('discountDuration').value) || 0;
+                const durationMinutes = parseInt(document.getElementById('discountDuration').value) || 1;
+                endTime = Date.now() + (durationMinutes * 60 * 1000); // محاسبه دقیق زمان پایان
             }
 
             if (!encodedImageBase64) {
@@ -95,17 +96,18 @@
                 return;
             }
 
-            // ارسال به جدول اصلی محصولات
+            // ارسال اطلاعات با کلیدهای دقیق ست شده در جدول شما
             const { error } = await supabaseClient.from('products').insert([
                 {
                     title: title,
                     price: price,
                     stock: stock,
-                    description: description,
-                    image: encodedImageBase64, // عکس اینجا به صورت متن ذخیره می‌شود
-                    is_amazing: isAmazing,
-                    discount_percent: discountPercent,
-                    discount_duration: discountDuration
+                    desc: description, // اصلاح شد به desc
+                    image: encodedImageBase64,
+                    isAmazing: isAmazing, // اصلاح شد به لترکیس اصلی دیتابیس شما
+                    discountPercent: discountPercent,
+                    endTime: endTime,
+                    comments: []
                 }
             ]);
 

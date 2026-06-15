@@ -9,9 +9,18 @@
 </head>
 <body>
     <div class="cyber-bg-animation" id="cyberBg"></div>
-    <div class="top-bar">
-        <div class="logo">📄 دیجی کاغذ آنلاین</div>
-        <div class="header-left">
+    
+    <div class="main-header-logo" style="text-align: center; padding: 30px 10px 15px 10px; background: rgba(13, 14, 21, 0.5); border-bottom: 1px solid rgba(0, 168, 150, 0.2);">
+        <img src="photo_2026-06-14_19-29-48.jpg" alt="لوگو بزرگ دیجی کاغذ" style="width: 150px; height: 150px; object-fit: contain; border-radius: 16px; filter: drop-shadow(0 0 15px rgba(0, 168, 150, 0.4));">
+        <h1 style="font-size: 28px; margin: 15px 0 0 0; font-family: inherit; font-weight: bold; letter-spacing: 1px;">
+            <span style="color: #00a896; text-shadow: 0 0 10px rgba(0, 168, 150, 0.3);">دیجی</span> 
+            <span style="color: #ffbc00; text-shadow: 0 0 10px rgba(255, 188, 0, 0.3);">کاغذ</span>
+        </h1>
+    </div>
+
+    <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+        <div class="logo" style="font-weight: bold; color: #00a896; font-size: 14px;">⚡ منوی دسترسی سریع</div>
+        <div class="header-left" style="display: flex; align-items: center; gap: 15px;">
             <span class="coin-badge"><span class="coin-icon"></span> <span id="userCoins">۰</span> سکه</span>
             
             <a href="#" onclick="openSellerModal(event)" class="nav-link admin-link" style="text-decoration: none;">💼 پنل فروشنده</a>
@@ -25,6 +34,7 @@
             <div class="cart-status">🛒 سبد: <span id="cartCount">۰</span> کالا</div>
         </div>
     </div>
+
     <div class="main-container">
         <h1 style="text-align: center;">🏪 ویترین زنده دیجی کاغذ</h1>
         <p class="subtitle">محصولات آنلاین ریل تایم! از مای کاغذ تخفیف بخرید.</p>
@@ -141,7 +151,7 @@
                 closeSellerModal();
                 window.location.href = "verify.html"; 
             } else if (password !== null) {
-                alert("❌ رمز عبور اشتباه است!");
+                alert("❌ رمز عبور اشتتباه است!");
             }
         }
     </script>
