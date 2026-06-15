@@ -5,6 +5,9 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // راه‌اندازی اولیه کلاینت سوپابیس
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// متغیرهای سراسری مدیریت حساب کاربر و فروشگاه
+let currentUser = null;
+let currentUserProfile = null;
 let selectedImageBase64 = "";
 let cart = []; 
 let currentDiscountPercent = 0;
@@ -20,16 +23,78 @@ const COUPONS_MARKET = [
     { id: "PAP50", title: "کد تخفیف ۵۰٪ سایبر", cost: 5, percent: 50 }
 ];
 
-function initThemeOnLoad() {
+async function initThemeOnLoad() {
     const savedTheme = localStorage.getItem('cyber_theme') || 'light';
     const selector = document.getElementById('themeSelector');
     if (selector) selector.value = savedTheme;
     applyThemeClass(savedTheme);
-    updateCoinDisplay();
+    
+    // ۱. بررسی وضعیت ورود کاربر و لود پروفایل ابری
+    await checkUserSession();
+    
     renderCouponsMarket();
-    renderOwnedCouponsList();
     fetchLiveProducts(); // خواندن محصولات از سرور
     listenToLiveChanges(); // فعال‌سازی سیستم گوش‌به‌زنگ آنی
+}
+
+// 🔐 بررسی وضعیت سشن کاربر و همگام‌سازی منو و پروفایل
+async function checkUserSession() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const authSection = document.getElementById('userAuthSection');
+    
+    if (user) {
+        currentUser = user;
+        
+        // دریافت اطلاعات پروفایل از جدول profiles
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+        if (!error && profile) {
+            currentUserProfile = profile;
+            updateCoinDisplay(profile.coins);
+            renderOwnedCouponsList(profile.owned_coupons);
+            
+            // پر کردن خودکار فیلد موبایل در مودال پرداخت در صورت وجود
+            const buyerPhoneInput = document.getElementById('buyerPhone');
+            if (buyerPhoneInput && user.phone) {
+                // تبدیل فرمت +98 به 0 برای راحتی خریدار
+                buyerPhoneInput.value = user.phone.replace('+98', '0');
+            }
+
+            // تغییر منوی هدر به حالت خوش‌آمدگویی
+            if (authSection) {
+                authSection.innerHTML = `
+                    <span style="color: #00a896; margin-left: 10px; font-weight: bold; font-size: 13px;">
+                        👋 ${profile.first_name || 'کاربر'} ${profile.last_name || 'گرامی'} خوش آمدی!
+                    </span>
+                    <button onclick="handleLogOut()" class="nav-link" style="background: rgba(230,28,77,0.1); color: #e61c4d; border: 1px solid #e61c4d; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit;">
+                        🚶‍♂️ خروج
+                    </button>
+                `;
+            }
+        }
+    } else {
+        // کاربر لاگین نکرده است
+        updateCoinDisplay(0);
+        renderOwnedCouponsList([]);
+        if (authSection) {
+            authSection.innerHTML = `<a href="auth.html" class="nav-link" id="authBtn" style="text-decoration: none; background: rgba(0, 168, 150, 0.1); padding: 5px 12px; border-radius: 4px; border: 1px solid #00a896; font-size: 13px;">🔐 ورود / عضویت با موبایل</a>`;
+        }
+    }
+}
+
+// 🚶‍♂️ تابع خروج از حساب کاربری
+async function handleLogOut() {
+    if (confirm("آیا می‌خواهید از حساب کاربری خود خارج شوید؟")) {
+        const { error } = await supabaseClient.auth.signOut();
+        if (!error) {
+            alert("🔒 با موفقیت از سیستم خارج شدید.");
+            window.location.reload();
+        }
+    }
 }
 
 // 📡 خواندن کالاها از دیتابیس ابری سوپابیس
@@ -65,24 +130,59 @@ function applyThemeClass(theme) {
     if (theme === 'neon-pulse') document.body.classList.add('neon-pulse-mode');
 }
 
-function updateCoinDisplay() {
-    let coins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
+function updateCoinDisplay(coinsAmount) {
+    let coins = coinsAmount !== undefined ? coinsAmount : (currentUserProfile ? currentUserProfile.coins : 0);
     const coinEl = document.getElementById('userCoins');
     if (coinEl) coinEl.textContent = coins.toLocaleString('fa-IR');
 }
 
+// 📸 پیش‌نمایش و فشرده‌سازی خودکار عکس کالا برای رفع خطای آپلود دیتابیس سوپابیس
 function previewImage(event) {
     const input = event.target;
     const preview = document.getElementById('imgPreview');
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            preview.src = e.target.result; 
-            preview.style.display = 'block';
-            selectedImageBase64 = e.target.result;
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                // فشرده‌سازی عکس روی Canvas تا ابعاد استاندارد ۳۰۰ پیکسل
+                const compressedBase64 = compressImage(img, 300, 300);
+                
+                preview.src = compressedBase64; 
+                preview.style.display = 'block';
+                selectedImageBase64 = compressedBase64;
+            };
         }
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+// ⚡ تابع کمکی فشرده‌ساز تصاویر برای کاهش حجم کدهای Base64
+function compressImage(img, maxWidth, maxHeight) {
+    const canvas = document.createElement('canvas');
+    let width = img.width;
+    let height = img.height;
+
+    if (width > height) {
+        if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+        }
+    } else {
+        if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+        }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // تبدیل به ساختار سبک jpeg با کیفیت پردازش ۷۰ درصد
+    return canvas.toDataURL('image/jpeg', 0.7);
 }
 
 function toggleAmazingOptions() {
@@ -91,7 +191,7 @@ function toggleAmazingOptions() {
     if(box) box.style.display = isAmazing ? 'block' : 'none';
 }
 
-// 🚀 آپلود مستقیم کالا روی سوپابیس بدون فیلترشکن
+// 🚀 آپلود مستقیم کالا روی سوپابیس
 const productForm = document.getElementById('productForm');
 if (productForm) {
     productForm.addEventListener('submit', async function(event) {
@@ -143,6 +243,9 @@ function displayProducts(productsList) {
         return;
     }
 
+    // گرفتن لیست لایک‌ها از سشن ابری کاربر
+    let wishlist = (currentUserProfile && currentUserProfile.wishlist) ? currentUserProfile.wishlist : [];
+
     products.forEach((prod) => {
         const card = document.createElement('div');
         card.className = 'product-card';
@@ -158,7 +261,7 @@ function displayProducts(productsList) {
         else if (stockValue <= 2) tagsHTML += `<span class="tag-badge tag-limited">🔥 آخرین قطعات!</span>`;
         tagsHTML += `</div>`;
 
-        let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
+        // بررسی اینکه آیا این آیدی کالا تو لایک‌های سرور کاربر هست یا نه
         let isLiked = wishlist.includes(Number(prod.id));
 
         let stockControlHTML = "";
@@ -261,6 +364,12 @@ async function loadProductDetails() {
             </div>
         </div>
     `;
+
+    // پر کردن نام خریدار لاگین کرده در فیلد کامنت‌ها به صورت خودکار
+    if (currentUserProfile) {
+        const cNameInput = document.getElementById('cName');
+        if (cNameInput) cNameInput.value = `${currentUserProfile.first_name} ${currentUserProfile.last_name}`;
+    }
 }
 
 async function restockFromDetails(prodId) {
@@ -287,175 +396,4 @@ async function addAdvancedComment(prodId) {
 
 function addToCart(prodId) {
     const prod = globalProductsArray.find(p => p.id == prodId);
-    if (!prod || prod.stock <= 0) { alert("موجودی تمام شده!"); return; }
-
-    cart.push(prod);
-    if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = cart.length.toLocaleString('fa-IR');
-    if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'block';
-    updateCartUI();
-}
-
-function updateCartUI() {
-    const listContainer = document.getElementById('cartItemsList');
-    if (!listContainer) return; listContainer.innerHTML = "";
-    let total = 0;
-
-    cart.forEach((item) => {
-        const li = document.createElement('li');
-        li.style = "display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;";
-        li.innerHTML = `<span>${item.title}</span><strong>${item.price.toLocaleString('fa-IR')} تومان</strong>`;
-        listContainer.appendChild(li);
-        total += item.price;
-    });
-
-    if (currentDiscountPercent > 0) {
-        total = total * ((100 - currentDiscountPercent) / 100);
-    }
-    if(document.getElementById('totalPrice')) document.getElementById('totalPrice').textContent = Math.round(total).toLocaleString('fa-IR');
-}
-
-function calculateEarnedCoins(itemCount) {
-    if (itemCount === 1) return 1;
-    if (itemCount === 2 || itemCount === 3 || itemCount === 4) return 2;
-    if (itemCount === 5 || itemCount === 6) return 3;
-    if (itemCount >= 7 && itemCount <= 9) return 4;
-    if (itemCount >= 10) return 5;
-    return 0;
-}
-
-// 🔄 تغییر یافته: هدایت کاربر به صفحه جدید درگاه پرداخت به همراه اطلاعات فاکتور
-function checkoutAndEarnCoins() {
-    if (cart.length === 0) { alert("سبد خرید شما خالی است!"); return; }
-
-    // دریافت مبلغ کل نهایی فاکتور از روی قالب سایت شما
-    const totalPriceText = document.getElementById('totalPrice').textContent;
-    
-    // دریافت زمان ارسال چرخشی انتخاب شده توسط خریدار
-    const deliverySlot = document.getElementById('deliveryTimeSlot').value;
-
-    // استخراج اطلاعات کوتاه محصولات سبد خرید
-    const orderItems = cart.map(item => ({ id: item.id, title: item.title, price: item.price }));
-
-    // ذخیره فاکتور در حافظه محلی مرورگر جهت خواندن در صفحه درگاه پرداخت جدید
-    localStorage.setItem('checkout_total_price', totalPriceText);
-    localStorage.setItem('checkout_delivery_slot', deliverySlot);
-    localStorage.setItem('checkout_cart_items', JSON.stringify(orderItems));
-
-    // انتقال مستقیم کاربر به صفحه مجزای پرداخت کالا
-    window.location.href = "checkout.html";
-}
-
-function applyCoupon() {
-    const inputCode = document.getElementById('couponInput').value.trim().toUpperCase();
-    let ownedCoupons = JSON.parse(localStorage.getItem('my_owned_coupons')) || [];
-    const found = ownedCoupons.find(c => c.id === inputCode);
-
-    if (found) {
-        currentDiscountPercent = found.percent;
-        document.getElementById('couponMsg').style.color = "#2ecc71";
-        document.getElementById('couponMsg').textContent = `✅ کد تخفیف ${found.percent}٪ اعمال شد!`;
-        updateCartUI();
-    } else {
-        document.getElementById('couponMsg').style.color = "#e61c4d";
-        document.getElementById('couponMsg').textContent = "❌ کد نامعتبر است.";
-    }
-}
-
-function toggleMyPaperSection() {
-    const sec = document.getElementById('myPaperSection');
-    if(sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-}
-
-function toggleWishlistSection() {
-    const sec = document.getElementById('wishlistSection');
-    if (sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-}
-
-function renderCouponsMarket() {
-    const container = document.getElementById('couponsMarketGrid');
-    if(!container) return; container.innerHTML = "";
-    COUPONS_MARKET.forEach(coupon => {
-        const card = document.createElement('div'); card.className = "coupon-market-card";
-        card.innerHTML = `<h4>${coupon.title}</h4><span>قیمت: ${coupon.cost} سکه</span><button onclick="buyCouponFromMarket('${coupon.id}', ${coupon.cost}, ${coupon.percent})">🛒 خرید کد</button>`;
-        container.appendChild(card);
-    });
-}
-
-function buyCouponFromMarket(id, cost, percent) {
-    let coins = parseInt(localStorage.getItem('cyber_user_coins')) || 0;
-    if(coins < cost) { alert("❌ سکه کافی نداری!"); return; }
-    localStorage.setItem('cyber_user_coins', coins - cost);
-    let owned = JSON.parse(localStorage.getItem('my_owned_coupons')) || [];
-    owned.push({ id, percent });
-    localStorage.setItem('my_owned_coupons', JSON.stringify(owned));
-    updateCoinDisplay(); renderOwnedCouponsList();
-}
-
-function renderOwnedCouponsList() {
-    const listContainer = document.getElementById('myOwnedCoupons');
-    if(!listContainer) return; listContainer.innerHTML = "";
-    let owned = JSON.parse(localStorage.getItem('my_owned_coupons')) || [];
-    if(owned.length === 0) { listContainer.innerHTML = "<li>کدی خریداری نشده است.</li>"; return; }
-    owned.forEach(c => {
-        const li = document.createElement('li');
-        li.innerHTML = `کد: <strong style='color:#ffcc00;'>${c.id}</strong> (تخفیف ${c.percent}٪)`;
-        listContainer.appendChild(li);
-    });
-}
-
-function toggleWishlist(prodId) {
-    let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
-    const idNum = Number(prodId);
-    
-    if (wishlist.includes(idNum)) {
-        wishlist = wishlist.filter(id => id !== idNum);
-    } else {
-        wishlist.push(idNum);
-    }
-    
-    localStorage.setItem('cyber_wishlist', JSON.stringify(wishlist));
-    displayProducts(); // رندر دوباره کارت‌ها برای آپدیت قلب‌ها
-    renderWishlist();  // رندر باکس پایینی
-}
-
-function renderWishlist() {
-    const container = document.getElementById('wishlistItemsContainer');
-    if (!container) return;
-    container.innerHTML = "";
-    
-    let wishlist = JSON.parse(localStorage.getItem('cyber_wishlist')) || [];
-    let favoriteProducts = globalProductsArray.filter(p => wishlist.includes(Number(p.id)));
-    
-    if (favoriteProducts.length === 0) {
-        container.innerHTML = "<p style='color:#aaa; font-size:12px; padding: 10px;'>لیست علاقه‌مندی‌های شما خالی است.</p>";
-        return;
-    }
-    
-    favoriteProducts.forEach(prod => {
-        const item = document.createElement('div');
-        item.style = "display:flex; justify-content:space-between; align-items:center; background:rgba(255, 0, 127, 0.05); padding:8px; border-radius:8px; border:1px solid rgba(255, 0, 127, 0.2); font-size:12px; color:inherit;";
-        item.innerHTML = `
-            <span>❤️ ${prod.title}</span>
-            <button onclick="toggleWishlist('${prod.id}')" style="background:none; border:none; color:#ff007f; cursor:pointer; font-weight:bold;">حذف 💔</button>
-        `;
-        container.appendChild(item);
-    });
-}
-
-async function deleteProduct(prodId) {
-    if(confirm("آیا مطمئن هستید که این کالا از دیتابیس ابری حذف شود؟")) {
-        const { error } = await supabaseClient.from('products').delete().eq('id', Number(prodId));
-        if (error) {
-            alert("خطا در حذف: " + error.message);
-        } else {
-            alert("🗑️ کالا با موفقیت حذف شد.");
-        }
-    }
-}
-
-function searchProducts() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    displayProducts(globalProductsArray.filter(prod => prod.title.toLowerCase().includes(query)));
-}
-
-window.onload = () => { initThemeOnLoad(); };
+    if (!prod || prod.stock <= 0) { alert("موجودی تمام شده
