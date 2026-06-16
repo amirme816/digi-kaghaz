@@ -3,13 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دیجی کاغذ - ویترین فروشگاه آنلاین سایبرپانک</title>
+    <title>دیجی کاغذ - ویترین فروشگاه آنلاین</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="cyber-bg-animation" id="cyberBg"></div>
     
+    <div id="cyberSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span style="color: #00a896; font-weight: bold; font-size: 15px;">⚡ منوی دسترسی سریع</span>
+            <button onclick="toggleSidebar()" style="background:none; border:none; color:#ff007f; font-size:24px; cursor:pointer; line-height: 1;">×</button>
+        </div>
+        
+        <div id="sidebarUserSection" class="sidebar-user-zone">
+            <div id="userAuthSection" style="display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+                <a href="auth.html" class="nav-link" id="authBtn" style="text-decoration: none; background: rgba(0, 168, 150, 0.1); padding: 8px 16px; border-radius: 6px; border: 1px solid #00a896; font-size: 13px; color: #00a896; font-weight: bold; display: block; width: 100%; text-align: center;">🔐 ورود / عضویت با موبایل</a>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 15px 0;">
+
+        <div class="sidebar-links">
+            <button class="sidebar-btn" style="border-color: #ffcc00; color: #ffcc00; width: 100%; margin-bottom: 10px;" onclick="toggleMyPaperSection(); toggleSidebar();">🪙 بخش مای کاغذ</button>
+            <button class="sidebar-btn" style="border-color: #ff007f; color: #ff007f; width: 100%;" onclick="toggleWishlistSection(); toggleSidebar();">❤️ لیست علاقه‌مندی‌ها</button>
+        </div>
+    </div>
+
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <div class="main-header-logo" style="text-align: center; padding: 30px 10px 15px 10px; background: rgba(13, 14, 21, 0.5); border-bottom: 1px solid rgba(0, 168, 150, 0.2);">
         <img src="photo_2026-06-14_19-29-48.jpg" alt="لوگو بزرگ دیجی کاغذ" style="width: 150px; height: 150px; object-fit: contain; border-radius: 16px; filter: drop-shadow(0 0 15px rgba(0, 168, 150, 0.4));">
         <h1 style="font-size: 28px; margin: 15px 0 0 0; font-family: inherit; font-weight: bold; letter-spacing: 1px;">
@@ -19,10 +41,8 @@
     </div>
 
     <div class="top-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); flex-wrap: wrap; gap: 10px;">
-        <div class="logo" style="font-weight: bold; color: #00a896; font-size: 14px;">⚡ منوی دسترسی سریع</div>
-        
-        <div id="userAuthSection" style="display: flex; align-items: center; gap: 10px;">
-            <a href="auth.html" class="nav-link" id="authBtn" style="text-decoration: none; background: rgba(0, 168, 150, 0.1); padding: 5px 12px; border-radius: 4px; border: 1px solid #00a896; font-size: 13px;">🔐 ورود / عضویت با موبایل</a>
+        <div class="header-right-menu">
+            <button onclick="toggleSidebar()" class="nav-toggle-btn">☰</button>
         </div>
 
         <div class="header-left" style="display: flex; align-items: center; gap: 15px;">
@@ -41,12 +61,9 @@
     </div>
 
     <div class="main-container">
-        <h1 style="text-align: center;">🏪 ویترین زنده دیجی کاغذ</h1>
-        <p class="subtitle">محصولات آنلاین ریل تایم! از مای کاغذ تخفیف بخرید.</p>
-        <div style="text-align: center; margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
-            <button class="nav-toggle-btn" onclick="toggleWishlistSection()">❤️ لیست علاقه‌مندی‌ها</button>
-            <button class="nav-toggle-btn" style="border-color: #ffcc00; color: #ffcc00;" onclick="toggleMyPaperSection()">🪙 بخش مای کاغذ</button>
-        </div>
+        <h1 style="text-align: center;">🏪 ویترین دیجی کاغذ</h1>
+        <p class="subtitle">محصولات اوریگامی! از مای کاغذ تخفیف بخرید.</p>
+        
         <div id="myPaperSection" class="cart-section" style="display: none; border-color: #ffcc00; background: rgba(255, 204, 0, 0.05);">
             <h3 style="color: #ffcc00;">🪙 مرکز خدمات «مای کاغذ»</h3>
             <div id="couponsMarketGrid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;"></div>
@@ -55,10 +72,12 @@
                 <ul id="myOwnedCoupons" style="font-size: 12px; padding-right: 20px; color: #2ecc71;"></ul>
             </div>
         </div>
+
         <div id="wishlistSection" class="cart-section" style="display: none; border-color: #ff007f;">
             <h3>❤️ لیست علاقه‌مندی‌های شما</h3>
             <div id="wishlistItemsContainer" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));"></div>
         </div>
+
         <div id="cartSection" class="cart-section" style="display: none;">
             <h3>🛒 سبد خرید شما</h3>
             <ul id="cartItemsList"></ul>
@@ -80,6 +99,7 @@
             </div>
             <button class="checkout-btn" onclick="checkoutAndEarnCoins()">🧹 نهایی کردن خرید</button>
         </div>
+
         <div class="filter-bar"><input type="text" id="searchInput" oninput="searchProducts()" placeholder="🔍 جستجوی آنی کالا..."></div>
         <div id="shopContainer" class="shop-grid"></div>
     </div>
@@ -109,7 +129,7 @@
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label style="display:block; margin-bottom:5px; font-size:12px; color: #aaa;">📸 بارگذاری تصویر یا اسکرین‌شات رسید:</label>
+                <label style="display:block; margin-bottom:5px; font-size:12px; color: #aaa;">📸 بارگذاری تصویر رسید:</label>
                 <input type="file" id="receiptImageInput" accept="image/*" onchange="previewReceipt(event)" style="font-size:12px;">
                 <img id="receiptPreview" src="#" alt="پیش‌نمایش" style="display:none; max-width: 100%; max-height: 120px; object-fit: contain; margin-top: 10px; border: 1px dashed #ffcc00; margin-left: auto; margin-right: auto; border-radius:4px;">
             </div>
@@ -160,6 +180,9 @@
             }
         }
     </script>
+
+    <!-- 🎵 افکت صوتی شیک و طبیعی ورق زدن کاغذ مخصوص منو و دکمه‌ها -->
+    <audio id="paperSound" src="https://assets.mixkit.co/active_storage/sfx/2381/2381-84.wav" preload="auto"></audio>
 
     <script src="script.js"></script>
 </body>

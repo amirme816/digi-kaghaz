@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دیجی کاغذ - ورود و عضویت با موبایل</title>
+    <title>دیجی کاغذ - ورود و عضویت </title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dark-theme-simple">
     <div class="main-container" style="max-width: 400px; margin-top: 50px;">
-        <h2 style="text-align: center; color: #e61c4d;">🔐 احراز هویت سایبرپانک</h2>
-        <p style="text-align: center; font-size: 13px; color: #888; margin-bottom: 20px;">با مشخصات خود به شبکه دیجی کاغذ متصل شوید</p>
+        <h2 style="text-align: center; color: #e61c4d;">🔐 احراز هویت دیجی کاغذ </h2>
+        <p style="text-align: center; font-size: 13px; color: #888; margin-bottom: 20px;">بدون نیاز به سرور و با امنیت کامل لوکال متصل شوید</p>
         
         <form id="authForm">
             <div class="form-group">
@@ -40,12 +39,7 @@
     </div>
 
     <script>
-        // اطلاعات اتصال اختصاصی دیتابیس شما
-        const SUPABASE_URL = "https://djzsluagybvdklzekpin.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqenNsdWFneWJ2ZGtsemVrcGluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjAyNDIsImV4cCI6MjA5NjkzNjI0Mn0.T9Y4QBREEOFEqlSFu9-6uxKNnHHTxtTQS0nG6dMKRsI";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // تبدیل شماره موبایل ایران به فرمت استاندارد بین‌المللی
+        // تبدیل شماره موبایل ایران به فرمت استاندارد یکپارچه
         function formatPhoneNumber(phone) {
             let formatted = phone.trim();
             if (formatted.startsWith('0')) {
@@ -56,8 +50,8 @@
             return formatted;
         }
 
-        // ۱. تابع ثبت‌نام با موبایل + ذخیره نام و فامیل
-        async function handleSignUp() {
+        // ۱. تابع ثبت‌نام مستقل و ذخیره روی سیستم خودت (LocalStorage)
+        function handleSignUp() {
             const firstName = document.getElementById('authFirstName').value.trim();
             const lastName = document.getElementById('authLastName').value.trim();
             const rawPhone = document.getElementById('authPhone').value;
@@ -68,27 +62,37 @@
 
             const phone = formatPhoneNumber(rawPhone);
 
-            // ثبت نام با ارسال متادیتا (نام و فامیل) به سوپابیس
-            const { data, error } = await supabaseClient.auth.signUp({ 
-                phone, 
-                password,
-                options: {
-                    data: {
-                        first_name: firstName,
-                        last_name: lastName
-                    }
-                }
-            });
+            // خواندن لیست تمام کاربران ثبت شده در این مرورگر
+            let allUsers = JSON.parse(localStorage.getItem('dk_local_users') || "[]");
 
-            if (error) {
-                alert("خطا در ثبت نام: " + error.message);
-            } else if (data.user) {
-                alert(`🎉 حساب شما با نام ${firstName} ${lastName} ساخته شد! حالا می‌توانید وارد شوید.`);
+            // بررسی تکراری نبودن شماره موبایل
+            const userExists = allUsers.some(user => user.phone === phone);
+            if (userExists) {
+                alert("❌ خطای ثبت‌نام: یک حساب کاربری با این شماره موبایل قبلاً ساخته شده است!");
+                return;
             }
+
+            // ساخت شیء پروفایل جدید (با موجودی اولیه ۵ سکه هدیه کاغذ!)
+            const newUser = {
+                id: Date.now(), // آیدی یکتا
+                phone: phone,
+                password: password,
+                first_name: firstName,
+                last_name: lastName,
+                coins: 5,
+                owned_coupons: [],
+                wishlist: []
+            };
+
+            // ذخیره در دیتابیس لوکال مرورگر
+            allUsers.push(newUser);
+            localStorage.setItem('dk_local_users', JSON.stringify(allUsers));
+
+            alert(`🎉 تبریک! حساب شما با نام "${firstName} ${lastName}" .\n🎁 ۵ سکه هدیه آغازین به شما تعلق گرفت! حالا دکمه ورود را بزنید.`);
         }
 
-        // ۲. تابع ورود با موبایل
-        async function handleSignIn() {
+        // ۲. تابع ورود و احراز هویت محلی
+        function handleSignIn() {
             const rawPhone = document.getElementById('authPhone').value;
             const password = document.getElementById('authPassword').value;
 
@@ -96,13 +100,20 @@
 
             const phone = formatPhoneNumber(rawPhone);
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ phone, password });
+            // دریافت لیست کاربران از مرورگر
+            let allUsers = JSON.parse(localStorage.getItem('dk_local_users') || "[]");
 
-            if (error) {
-                alert("خطا در ورود: " + error.message);
-            } else if (data.user) {
-                alert("🔓 خوش آمدید! با موفقیت وارد شدید.");
-                window.location.href = "index.html"; // انتقال به ویترین
+            // پیدا کردن کاربر با شماره و رمز مطابقت داده شده
+            const matchedUser = allUsers.find(user => user.phone === phone && user.password === password);
+
+            if (matchedUser) {
+                // ذخیره سشن کاربر فعال در سیستم برای خواندن توسط script.js
+                localStorage.setItem('dk_current_user', JSON.stringify(matchedUser));
+                
+                alert(`🔓 خوش آمدید ${matchedUser.first_name}! ورود شما موفقیت‌آمیز بود.`);
+                window.location.href = "index.html"; // هدایت مستقیم به صفحه اصلی
+            } else {
+                alert("❌ خطای ورود: شماره موبایل یا رمز عبور اشتباه است، یا هنوز ثبت‌نام نکرده‌اید.");
             }
         }
     </script>

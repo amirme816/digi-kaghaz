@@ -96,18 +96,195 @@ body.matrix-mode .comment-item, body.neon-pulse-mode .comment-item { background:
 .coupon-box button { background: #333; color: white; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
 
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; margin-top: 25px; }
-.product-card { background: #ffffff; border-radius: 12px; padding: 16px; text-align: right; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #efefef; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-.product-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; }
+
+/* 📄 بازنویسی اختصاصی کارت محصول برای القای حس بافت و باز شدن تاخوردگی کاغذ */
+.product-card { 
+    background: #ffffff; 
+    border-radius: 4px; /* لبه‌های زاویه‌دار شبیه کاغذ و مقوا */
+    padding: 16px; 
+    text-align: right; 
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.03); 
+    border: 1px solid #efefef; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    position: relative; 
+    
+    /* افکت‌های ترنزیشن ورق خوردن */
+    transform-origin: top center;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), 
+                box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+                border-color 0.3s ease;
+    
+    /* اجرای انیمیشن باز شدن لایه‌ای کاغذ در هنگام رندر شدن کالا */
+    animation: origamiUnfold 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) both;
+}
+
+/* ☝️ هاور کارت: بلند شدن لبه پایینی محصول مثل کاغذ واقعی */
+.product-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+    border-color: #00a896;
+}
+
+/* ✨ انیمیشن تاخوردگی روان کالاها */
+@keyframes origamiUnfold {
+    0% {
+        transform: perspective(1000px) rotateX(-12deg) translateY(15px);
+        opacity: 0;
+    }
+    100% {
+        transform: perspective(1000px) rotateX(0deg) translateY(0);
+        opacity: 1;
+    }
+}
+
+.product-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 4px; }
 .buy-btn { width: 100%; background: #fff; color: #e61c4d; border: 1px solid #e61c4d; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 8px; cursor: pointer; }
 .buy-btn:hover { background: #e61c4d; color: white; }
 .delete-btn { background: none; border: none; color: #ccc; cursor: pointer; position: absolute; top: 10px; left: 10px; z-index: 10; }
 .cart-section { background: #fff3f5; border: 2px solid #e61c4d; border-radius: 12px; padding: 20px; margin: 30px 0; }
 .checkout-btn { width: 100%; background-color: #e61c4d; color: white; border: none; padding: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
-.nav-toggle-btn { background: none; border: 1px solid #ff007f; color: #ff007f; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; font-weight: bold; }
 
-/* استایل کارت‌های کوچک بخش تخفیف مای کاغذ */
+/* ⚙️ استایل دکمه همبرگری به سبک برند دیجی کاغذ */
+.nav-toggle-btn { 
+    background: rgba(0, 168, 150, 0.08); 
+    border: 1px solid #00a896; 
+    color: #00a896; 
+    padding: 6px 14px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-family: inherit; 
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+.nav-toggle-btn:hover {
+    background: #00a896;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 168, 150, 0.15);
+}
+
 .coupon-market-card { background: #fff; border: 1px dashed #ffcc00; padding: 10px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; gap: 5px; }
 body.matrix-mode .coupon-market-card, body.neon-pulse-mode .coupon-market-card { background: #241442; }
 .coupon-market-card h4 { margin: 0; font-size: 12px; color: #ffcc00; }
 .coupon-market-card span { font-size: 11px; font-weight: bold; }
 .coupon-market-card button { background: #ffcc00; color: #000; border: none; border-radius: 4px; padding: 4px; font-size: 10px; cursor: pointer; font-family: inherit; font-weight: bold; }
+
+/* ==========================================================================
+    🧭 استایل‌های جدید منوی کشویی و سیستم دسترسی نئونی پروفایل
+   ========================================================================== */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px; /* شروع پنهان در سمت چپ */
+    width: 290px;
+    height: 100%;
+    background: #0b0c10;
+    box-shadow: 4px 0 25px rgba(0, 168, 150, 0.25);
+    z-index: 9999;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 25px 20px;
+    box-sizing: border-box;
+    direction: rtl;
+    border-right: 2px solid #00a896;
+}
+
+.sidebar.open {
+    left: 0; /* باز شدن روان */
+}
+
+/* هماهنگ‌سازی پس‌زمینه سایدبار با تم‌های سایبرپانک انتخابی */
+body.dark-theme-simple .sidebar { background: #1a1e24; border-color: #333; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+body.matrix-mode .sidebar, body.neon-pulse-mode .sidebar {
+    background-color: #120626;
+    border-color: #ff007f;
+    box-shadow: 0 0 25px rgba(255, 0, 127, 0.4);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(3px);
+    z-index: 9998;
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+.sidebar-user-zone {
+    padding: 20px 0;
+    text-align: center;
+}
+
+.sidebar-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-btn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: right;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.sidebar-btn:hover {
+    background: rgba(0, 168, 150, 0.1);
+    border-color: #00a896;
+    color: #00a896;
+    padding-right: 20px; /* افکت کشویی متن در هاور */
+}
+
+body.matrix-mode .sidebar-btn:hover, body.neon-pulse-mode .sidebar-btn:hover {
+    background: rgba(255, 0, 127, 0.1);
+    border-color: #ff007f;
+    color: #ff007f;
+}
+
+/* 👤 کارت پروفایل آیکونی دایره‌ای با افکت هاله نئونی شیک */
+.user-avatar-circle {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00a896, #00ffc4);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto 12px auto;
+    box-shadow: 0 0 15px rgba(0, 168, 150, 0.6);
+    border: 3px solid #fff;
+    transition: transform 0.3s ease;
+}
+
+.user-avatar-circle:hover {
+    transform: rotate(15deg) scale(1.05);
+}
+
+body.matrix-mode .user-avatar-circle, body.neon-pulse-mode .user-avatar-circle {
+    background: linear-gradient(135deg, #e61c4d, #ff007f);
+    box-shadow: 0 0 20px rgba(255, 0, 127, 0.8);
+    color: #fff;
+}

@@ -1,11 +1,11 @@
-// 🌐 اطلاعات اتصال اختصاصی و بدون فیلتر فروشگاه دیجی کاغذ به سوپابیس
+// 🌐 اطلاعات اتصال اختصاصی فروشگاه دیجی کاغذ به سوپابیس (بخش محصولات همچنان متصل به ابزار آنلاین است)
 const SUPABASE_URL = "https://djzsluagybvdklzekpin.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqenNsdWFneWJ2ZGtsemVrcGluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjAyNDIsImV4cCI6MjA5NjkzNjI0Mn0.T9Y4QBREEOFEqlSFu9-6uxKNnHHTxtTQS0nG6dMKRsI";
 
-// راه‌اندازی اولیه کلاینت سوپابیس
+// راه‌اندازی اولیه کلاینت سوپابیس برای کالاها
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// متغیرهای سراسری مدیریت حساب کاربر و فروشگاه
+// متغیرهای سراسری مدیریت حساب کاربر و فروشگاه (حالا متصل به LocalStorage)
 let currentUser = null;
 let currentUserProfile = null;
 let selectedImageBase64 = "";
@@ -29,71 +29,111 @@ async function initThemeOnLoad() {
     if (selector) selector.value = savedTheme;
     applyThemeClass(savedTheme);
     
-    // ۱. بررسی وضعیت ورود کاربر و لود پروفایل ابری
-    await checkUserSession();
+    // ۱. بررسی وضعیت ورود کاربر از روی مرورگر (LocalStorage) و همگام‌سازی منوها
+    checkUserSession();
     
     renderCouponsMarket();
     fetchLiveProducts(); // خواندن محصولات از سرور
     listenToLiveChanges(); // فعال‌سازی سیستم گوش‌به‌زنگ آنی
 }
 
-// 🔐 بررسی وضعیت سشن کاربر و همگام‌سازی منو و پروفایل
-async function checkUserSession() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    const authSection = document.getElementById('userAuthSection');
-    
-    if (user) {
-        currentUser = user;
-        
-        // دریافت اطلاعات پروفایل از جدول profiles
-        const { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-        if (!error && profile) {
-            currentUserProfile = profile;
-            updateCoinDisplay(profile.coins);
-            renderOwnedCouponsList(profile.owned_coupons);
-            
-            // پر کردن خودکار فیلد موبایل در مودال پرداخت در صورت وجود
-            const buyerPhoneInput = document.getElementById('buyerPhone');
-            if (buyerPhoneInput && user.phone) {
-                // تبدیل فرمت +98 به 0 برای راحتی خریدار
-                buyerPhoneInput.value = user.phone.replace('+98', '0');
-            }
+// 🎵 پخش صوتی افکت ورق زدن کاغذ
+function playPaperSound() {
+    const sound = document.getElementById('paperSound');
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(err => console.log("پخش خودکار صوتی نیاز به تعامل اولیه کاربر دارد: ", err));
+    }
+}
 
-            // تغییر منوی هدر به حالت خوش‌آمدگویی
-            if (authSection) {
-                authSection.innerHTML = `
-                    <span style="color: #00a896; margin-left: 10px; font-weight: bold; font-size: 13px;">
-                        👋 ${profile.first_name || 'کاربر'} ${profile.last_name || 'گرامی'} خوش آمدی!
-                    </span>
-                    <button onclick="handleLogOut()" class="nav-link" style="background: rgba(230,28,77,0.1); color: #e61c4d; border: 1px solid #e61c4d; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit;">
-                        🚶‍♂️ خروج
-                    </button>
-                `;
-            }
+// 🧭 توابع باز و بسته کردن منوی کشویی (Sidebar) به همراه صدای کاغذ
+function toggleSidebar() {
+    playPaperSound(); // اجرای افکت صوتی هنگام کلیک روی منو
+    const sidebar = document.getElementById('cyberSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    }
+}
+
+// 🔐 بررسی وضعیت سشن کاربر و همگام‌سازی سایدبار و دکمه پروفایل نئونی دایره‌ای
+function checkUserSession() {
+    const savedUser = localStorage.getItem('dk_current_user');
+    const authSection = document.getElementById('userAuthSection');
+    const sidebarUserSection = document.getElementById('sidebarUserSection');
+    
+    if (savedUser) {
+        // کاربر از قبل لاگین کرده است
+        const profile = JSON.parse(savedUser);
+        currentUser = { id: profile.id, phone: profile.phone };
+        currentUserProfile = profile;
+        
+        updateCoinDisplay(profile.coins);
+        renderOwnedCouponsList(profile.owned_coupons);
+        
+        // پر کردن خودکار فیلد موبایل در مودال پرداخت
+        const buyerPhoneInput = document.getElementById('buyerPhone');
+        if (buyerPhoneInput && profile.phone) {
+            buyerPhoneInput.value = profile.phone;
+        }
+
+        // حرف اول نام برای نمایش داخل آیکون پروفایل دایره‌ای
+        const firstChar = profile.first_name ? profile.first_name.charAt(0) : 'U';
+
+        // تزریق آیکون پروفایل دایره‌ای نئونی جذاب و اطلاعات به داخل منوی کشویی
+        if (sidebarUserSection) {
+            sidebarUserSection.innerHTML = `
+                <div class="user-avatar-circle">${firstChar}</div>
+                <div style="color: #fff; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+                    ${profile.first_name || 'کاربر'} ${profile.last_name || 'گرامی'}
+                </div>
+                <div style="color: #8892b0; font-size: 11px; margin-bottom: 15px; direction: ltr;">
+                    ${profile.phone || ''}
+                </div>
+                <button onclick="handleLogOut()" style="background: rgba(230,28,77,0.1); color: #e61c4d; border: 1px solid #e61c4d; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; font-weight: bold; width: 100%;">
+                    🚶‍♂️ خروج از حساب کاربری
+                </button>
+            `;
+        }
+
+        // هماهنگ‌سازی هدر اصلی (در صورت نیاز به سازگاری با کدهای فرانت قدیمی)
+        if (authSection) {
+            authSection.innerHTML = `
+                <span style="color: #00a896; margin-left: 10px; font-weight: bold; font-size: 13px;">
+                    👋 خوش آمدید
+                </span>
+            `;
         }
     } else {
         // کاربر لاگین نکرده است
         updateCoinDisplay(0);
         renderOwnedCouponsList([]);
-        if (authSection) {
-            authSection.innerHTML = `<a href="auth.html" class="nav-link" id="authBtn" style="text-decoration: none; background: rgba(0, 168, 150, 0.1); padding: 5px 12px; border-radius: 4px; border: 1px solid #00a896; font-size: 13px;">🔐 ورود / عضویت با موبایل</a>`;
-        }
+        
+        const loginLinkHTML = `<a href="auth.html" class="nav-link" id="authBtn" style="text-decoration: none; background: rgba(0, 168, 150, 0.1); padding: 8px 16px; border-radius: 6px; border: 1px solid #00a896; font-size: 13px; color: #00a896; font-weight: bold; display: block; width: 100%; text-align: center;">🔐 ورود / عضویت با موبایل</a>`;
+        
+        if (sidebarUserSection) sidebarUserSection.innerHTML = loginLinkHTML;
+        if (authSection) authSection.innerHTML = loginLinkHTML;
+    }
+}
+
+// 💾 تابع کمکی برای ذخیره آنی تغییرات پروفایل کاربر در مرورگر
+function saveProfileToStorage(profile) {
+    localStorage.setItem('dk_current_user', JSON.stringify(profile));
+    const allUsers = JSON.parse(localStorage.getItem('dk_local_users') || "[]");
+    const index = allUsers.findIndex(u => u.id === profile.id);
+    if (index !== -1) {
+        allUsers[index] = profile;
+        localStorage.setItem('dk_local_users', JSON.stringify(allUsers));
     }
 }
 
 // 🚶‍♂️ تابع خروج از حساب کاربری
-async function handleLogOut() {
+function handleLogOut() {
     if (confirm("آیا می‌خواهید از حساب کاربری خود خارج شوید؟")) {
-        const { error } = await supabaseClient.auth.signOut();
-        if (!error) {
-            alert("🔒 با موفقیت از سیستم خارج شدید.");
-            window.location.reload();
-        }
+        localStorage.removeItem('dk_current_user');
+        alert("🔒 با موفقیت از سیستم خارج شدید.");
+        window.location.reload();
     }
 }
 
@@ -146,9 +186,7 @@ function previewImage(event) {
             const img = new Image();
             img.src = e.target.result;
             img.onload = function() {
-                // فشرده‌سازی عکس روی Canvas تا ابعاد استاندارد ۳۰۰ پیکسل
                 const compressedBase64 = compressImage(img, 300, 300);
-                
                 preview.src = compressedBase64; 
                 preview.style.display = 'block';
                 selectedImageBase64 = compressedBase64;
@@ -180,8 +218,6 @@ function compressImage(img, maxWidth, maxHeight) {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, width, height);
-
-    // تبدیل به ساختار سبک jpeg با کیفیت پردازش ۷۰ درصد
     return canvas.toDataURL('image/jpeg', 0.7);
 }
 
@@ -243,7 +279,6 @@ function displayProducts(productsList) {
         return;
     }
 
-    // گرفتن لیست لایک‌ها از سشن ابری کاربر
     let wishlist = (currentUserProfile && currentUserProfile.wishlist) ? currentUserProfile.wishlist : [];
 
     products.forEach((prod) => {
@@ -261,7 +296,6 @@ function displayProducts(productsList) {
         else if (stockValue <= 2) tagsHTML += `<span class="tag-badge tag-limited">🔥 آخرین قطعات!</span>`;
         tagsHTML += `</div>`;
 
-        // بررسی اینکه آیا این آیدی کالا تو لایک‌های سرور کاربر هست یا نه
         let isLiked = wishlist.includes(Number(prod.id));
 
         let stockControlHTML = "";
@@ -280,7 +314,7 @@ function displayProducts(productsList) {
                 <img src="${prod.image}">
                 ${tagsHTML}
                 <h3 style="margin:5px 0 0 0;">${prod.title}</h3>
-                <div style="font-size:12px; color:#888; margin-top:2px;">موجودی انبار: ${stockValue} عدد</div>
+                <div style="font-size:12px; color:#888; margin-top:2px;">موجونی انبار: ${stockValue} عدد</div>
                 <div class="price" style="margin-top:5px; color:#e61c4d; font-weight:bold;">${finalPrice.toLocaleString('fa-IR')} تومان</div>
             </div>
             ${stockControlHTML}
@@ -365,7 +399,6 @@ async function loadProductDetails() {
         </div>
     `;
 
-    // پر کردن نام خریدار لاگین کرده در فیلد کامنت‌ها به صورت خودکار
     if (currentUserProfile) {
         const cNameInput = document.getElementById('cName');
         if (cNameInput) cNameInput.value = `${currentUserProfile.first_name} ${currentUserProfile.last_name}`;
@@ -396,4 +429,185 @@ async function addAdvancedComment(prodId) {
 
 function addToCart(prodId) {
     const prod = globalProductsArray.find(p => p.id == prodId);
-    if (!prod || prod.stock <= 0) { alert("موجودی تمام شده
+    if (!prod || prod.stock <= 0) { alert("موجودی تمام شده!"); return; }
+
+    cart.push(prod);
+    if(document.getElementById('cartCount')) document.getElementById('cartCount').textContent = cart.length.toLocaleString('fa-IR');
+    if(document.getElementById('cartSection')) document.getElementById('cartSection').style.display = 'block';
+    updateCartUI();
+}
+
+function updateCartUI() {
+    const listContainer = document.getElementById('cartItemsList');
+    if (!listContainer) return; listContainer.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item) => {
+        const li = document.createElement('li');
+        li.style = "display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;";
+        li.innerHTML = `<span>${item.title}</span><strong>${item.price.toLocaleString('fa-IR')} تومان</strong>`;
+        listContainer.appendChild(li);
+        total += item.price;
+    });
+
+    if (currentDiscountPercent > 0) {
+        total = total * ((100 - currentDiscountPercent) / 100);
+    }
+    if(document.getElementById('totalPrice')) document.getElementById('totalPrice').textContent = Math.round(total).toLocaleString('fa-IR');
+}
+
+function checkoutAndEarnCoins() {
+    if (!currentUser) {
+        alert("🔒 برای ثبت سفارش و نهایی کردن خرید، ابتدا باید وارد حساب کاربری خود شوید.");
+        window.location.href = "auth.html";
+        return;
+    }
+    if (cart.length === 0) { alert("سبد خرید شما خالی است!"); return; }
+
+    const totalPriceText = document.getElementById('totalPrice').textContent;
+    const deliverySlot = document.getElementById('deliveryTimeSlot').value;
+    const orderItems = cart.map(item => ({ id: item.id, title: item.title, price: item.price }));
+
+    localStorage.setItem('checkout_total_price', totalPriceText);
+    localStorage.setItem('checkout_delivery_slot', deliverySlot);
+    localStorage.setItem('checkout_cart_items', JSON.stringify(orderItems));
+
+    window.location.href = "checkout.html";
+}
+
+function applyCoupon() {
+    const inputCode = document.getElementById('couponInput').value.trim().toUpperCase();
+    let ownedCoupons = (currentUserProfile && currentUserProfile.owned_coupons) ? currentUserProfile.owned_coupons : [];
+    const found = ownedCoupons.find(c => c.id === inputCode);
+
+    if (found) {
+        currentDiscountPercent = found.percent;
+        document.getElementById('couponMsg').style.color = "#2ecc71";
+        document.getElementById('couponMsg').textContent = `✅ کد تخفیف ${found.percent}٪ اعمال شد!`;
+        updateCartUI();
+    } else {
+        document.getElementById('couponMsg').style.color = "#e61c4d";
+        document.getElementById('couponMsg').textContent = "❌ این کد تخفیف در کدهای فعال شما یافت نشد.";
+    }
+}
+
+function toggleMyPaperSection() {
+    const sec = document.getElementById('myPaperSection');
+    if(sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleWishlistSection() {
+    const sec = document.getElementById('wishlistSection');
+    if (sec) sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderCouponsMarket() {
+    const container = document.getElementById('couponsMarketGrid');
+    if(!container) return; container.innerHTML = "";
+    COUPONS_MARKET.forEach(coupon => {
+        const card = document.createElement('div'); card.className = "coupon-market-card";
+        card.innerHTML = `<h4>${coupon.title}</h4><span>قیمت: ${coupon.cost} سکه</span><button onclick="buyCouponFromMarket('${coupon.id}', ${coupon.cost}, ${coupon.percent})">🛒 خرید کد</button>`;
+        container.appendChild(card);
+    });
+}
+
+function buyCouponFromMarket(id, cost, percent) {
+    if (!currentUser) {
+        alert("🔒 برای خرید کد تخفیف ابتدا باید وارد حساب خود شوید.");
+        window.location.href = "auth.html";
+        return;
+    }
+
+    let currentCoins = currentUserProfile.coins || 0;
+    if(currentCoins < cost) { alert("❌ سکه کاغذ کافی نداری! خرید محصولات فاکتوردار سکه هدیه می‌دهد."); return; }
+    
+    let owned = currentUserProfile.owned_coupons || [];
+    owned.push({ id, percent });
+    let newCoinsBalance = currentCoins - cost;
+
+    currentUserProfile.coins = newCoinsBalance;
+    currentUserProfile.owned_coupons = owned;
+    saveProfileToStorage(currentUserProfile);
+
+    alert(`🎫 کد تخفیف ${id} با موفقیت خریداری شد و به حسابت اضافه گردید!`);
+    updateCoinDisplay(newCoinsBalance); 
+    renderOwnedCouponsList(owned);
+}
+
+function renderOwnedCouponsList(ownedCouponsArray) {
+    const listContainer = document.getElementById('myOwnedCoupons');
+    if(!listContainer) return; listContainer.innerHTML = "";
+    let owned = ownedCouponsArray || ((currentUserProfile && currentUserProfile.owned_coupons) ? currentUserProfile.owned_coupons : []);
+    
+    if(owned.length === 0) { listContainer.innerHTML = "<li>کدی خریداری نشده است.</li>"; return; }
+    owned.forEach(c => {
+        const li = document.createElement('li');
+        li.innerHTML = `کد قابل استفاده: <strong style='color:#ffcc00; letter-spacing:1px;'>${c.id}</strong> (تخفیف ${c.percent}٪)`;
+        listContainer.appendChild(li);
+    });
+}
+
+function toggleWishlist(prodId) {
+    if (!currentUser) {
+        alert("🔒 برای اضافه کردن کالا به علاقه‌مندی‌ها، ابتدا وارد حساب کاربری خود شوید.");
+        window.location.href = "auth.html";
+        return;
+    }
+
+    let wishlist = currentUserProfile.wishlist || [];
+    const idNum = Number(prodId);
+    
+    if (wishlist.includes(idNum)) {
+        wishlist = wishlist.filter(id => id !== idNum);
+    } else {
+        wishlist.push(idNum);
+    }
+    
+    currentUserProfile.wishlist = wishlist;
+    saveProfileToStorage(currentUserProfile);
+
+    displayProducts(); 
+    renderWishlist();  
+}
+
+function renderWishlist() {
+    const container = document.getElementById('wishlistItemsContainer');
+    if (!container) return;
+    container.innerHTML = "";
+    
+    let wishlist = (currentUserProfile && currentUserProfile.wishlist) ? currentUserProfile.wishlist : [];
+    let favoriteProducts = globalProductsArray.filter(p => wishlist.includes(Number(p.id)));
+    
+    if (favoriteProducts.length === 0) {
+        container.innerHTML = "<p style='color:#aaa; font-size:12px; padding: 10px;'>لیست علاقه‌مندی‌های شما خالی است.</p>";
+        return;
+    }
+    
+    favoriteProducts.forEach(prod => {
+        const item = document.createElement('div');
+        item.style = "display:flex; justify-content:space-between; align-items:center; background:rgba(255, 0, 127, 0.05); padding:8px; border-radius:8px; border:1px solid rgba(255, 0, 127, 0.2); font-size:12px; color:inherit;";
+        item.innerHTML = `
+            <span>❤️ ${prod.title}</span>
+            <button onclick="toggleWishlist('${prod.id}')" style="background:none; border:none; color:#ff007f; cursor:pointer; font-weight:bold; font-family:inherit;">حذف 💔</button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+async function deleteProduct(prodId) {
+    if(confirm("آیا مطمئن هستید که این کالا از دیتابیس ابری حذف شود؟")) {
+        const { error } = await supabaseClient.from('products').delete().eq('id', Number(prodId));
+        if (error) {
+            alert("خطا در حذف: " + error.message);
+        } else {
+            alert("🗑️ کالا با موفقیت حذف شد.");
+        }
+    }
+}
+
+function searchProducts() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    displayProducts(globalProductsArray.filter(prod => prod.title.toLowerCase().includes(query)));
+}
+
+window.onload = () => { initThemeOnLoad(); };
